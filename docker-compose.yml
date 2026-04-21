@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   db:
-    image: postgres:16
+    image: ${REGISTRY:-docker.io}/postgres:16
     env_file:
       - .env
     environment:
@@ -13,7 +13,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
   api:
-    image: golang:1.22
+    image: ${REGISTRY:-docker.io}/golang:1.22
     working_dir: /app/server
     command: bash -lc "go mod tidy && go run ./cmd/migrate && go run ./cmd/api"
     env_file:
