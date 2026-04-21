@@ -2,26 +2,35 @@ version: "3.9"
 services:
   db:
     image: postgres:16
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: easyssl
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${PG_DATABASE:-easyssl}
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "${PG_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
   api:
     image: golang:1.22
     working_dir: /app/server
     command: bash -lc "go mod tidy && go run ./cmd/migrate && go run ./cmd/api"
+    env_file:
+      - .env
     volumes:
       - .:/app
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/easyssl?sslmode=disable
-      LISTEN_ADDR: :8090
-      JWT_SECRET: easyssl-dev-secret
+      LISTEN_ADDR: ${LISTEN_ADDR:-:8090}
+      JWT_SECRET: ${JWT_SECRET:-easyssl-dev-secret}
+      PG_HOST: db
+      PG_PORT: 5432
+      PG_USER: ${PG_USER:-postgres}
+      PG_PASSWORD: ${PG_PASSWORD:-postgres}
+      PG_DATABASE: ${PG_DATABASE:-easyssl}
+      PG_SSLMODE: ${PG_SSLMODE:-disable}
     ports:
-      - "8090:8090"
+      - "${API_PORT:-8090}:8090"
     depends_on:
       - db
 volumes:

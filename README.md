@@ -23,6 +23,14 @@ Default bootstrap admin:
 
 ## Quick start
 
+### 0) Prepare global config
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` for your global settings (especially `PG_*` and `JWT_SECRET`).
+
 ### 1) Start DB + API
 
 ```bash
@@ -47,6 +55,8 @@ Visit: `http://127.0.0.1:5173`
 - `server/`: Gin API, domain services, workflow dispatcher, migrations
 - `web/`: Vite React app, dashboard/access/workflow/certificate/settings pages
 - `docker-compose.yml`: local PostgreSQL
+- `.env`: global runtime config (local file, not committed)
+- `.env.example`: global config template
 
 ## Notes
 
