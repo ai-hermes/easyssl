@@ -49,4 +49,5 @@ This repository is split into two apps:
 
 ## Security & Configuration Tips
 - Never commit real secrets in `.env`; use `.env.example` templates only.
+- Use only repository-root `.env` / `.env.example` for configuration; do not add per-module `.env.example` duplicates.
 - Rotate `JWT_SECRET` and database credentials for non-local environments.
