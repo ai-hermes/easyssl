@@ -13,13 +13,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
   api:
-    image: ${REGISTRY:-docker.io}/golang:1.22
-    working_dir: /app/server
-    command: bash -lc "go mod tidy && go run ./cmd/migrate && go run ./cmd/api"
+    image: ${REGISTRY:-docker.io}/easyssl-api:dev
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      args:
+        REGISTRY: ${REGISTRY:-docker.io}
     env_file:
       - .env
-    volumes:
-      - .:/app
     environment:
       LISTEN_ADDR: ${LISTEN_ADDR:-:8090}
       JWT_SECRET: ${JWT_SECRET:-easyssl-dev-secret}
