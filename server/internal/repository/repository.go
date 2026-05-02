@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"easyssl/server/internal/db"
@@ -78,6 +79,23 @@ func (r *Repository) ListAccesses(ctx context.Context) ([]model.Access, error) {
 		items = append(items, m)
 	}
 	return items, rows.Err()
+}
+
+func (r *Repository) GetAccessByID(ctx context.Context, id string) (*model.Access, error) {
+	m := &model.Access{}
+	var raw []byte
+	err := r.db.Pool.QueryRow(ctx, `SELECT id,name,provider,config,reserve,deleted_at,created_at,updated_at FROM accesses WHERE id=$1 AND deleted_at IS NULL`, id).
+		Scan(&m.ID, &m.Name, &m.Provider, &raw, &m.Reserve, &m.DeletedAt, &m.CreatedAt, &m.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &m.Config)
+	}
+	return m, nil
 }
 
 func (r *Repository) SaveAccess(ctx context.Context, in model.Access) (*model.Access, error) {
@@ -236,6 +254,130 @@ func (r *Repository) ListWorkflowRunsByWorkflow(ctx context.Context, workflowID 
 		}
 		if len(raw) > 0 {
 			_ = json.Unmarshal(raw, &m.Graph)
+		}
+		items = append(items, m)
+	}
+	return items, rows.Err()
+}
+
+func (r *Repository) UpsertWorkflowRunNode(ctx context.Context, in model.WorkflowRunNode) (*model.WorkflowRunNode, error) {
+	now := time.Now()
+	outputRaw, _ := json.Marshal(in.Output)
+
+	if in.ID == "" {
+		in.ID = uuid.NewString()
+	}
+	in.UpdatedAt = now
+
+	_, err := r.db.Pool.Exec(ctx, `
+INSERT INTO workflow_run_nodes(id,run_id,node_id,node_name,action,provider,status,started_at,ended_at,error,output,created_at,updated_at)
+VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+ON CONFLICT(run_id,node_id) DO UPDATE SET
+  node_name=EXCLUDED.node_name,
+  action=EXCLUDED.action,
+  provider=EXCLUDED.provider,
+  status=EXCLUDED.status,
+  started_at=COALESCE(EXCLUDED.started_at, workflow_run_nodes.started_at),
+  ended_at=EXCLUDED.ended_at,
+  error=EXCLUDED.error,
+  output=EXCLUDED.output,
+  updated_at=EXCLUDED.updated_at
+`, in.ID, in.RunID, in.NodeID, in.NodeName, in.Action, in.Provider, in.Status, in.StartedAt, in.EndedAt, in.Error, outputRaw, now, now)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetWorkflowRunNode(ctx, in.RunID, in.NodeID)
+}
+
+func (r *Repository) GetWorkflowRunNode(ctx context.Context, runID, nodeID string) (*model.WorkflowRunNode, error) {
+	var m model.WorkflowRunNode
+	var outputRaw []byte
+	err := r.db.Pool.QueryRow(ctx, `SELECT id,run_id,node_id,node_name,action,provider,status,started_at,ended_at,error,output,created_at,updated_at FROM workflow_run_nodes WHERE run_id=$1 AND node_id=$2`, runID, nodeID).
+		Scan(&m.ID, &m.RunID, &m.NodeID, &m.NodeName, &m.Action, &m.Provider, &m.Status, &m.StartedAt, &m.EndedAt, &m.Error, &outputRaw, &m.CreatedAt, &m.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(outputRaw) > 0 {
+		_ = json.Unmarshal(outputRaw, &m.Output)
+	}
+	return &m, nil
+}
+
+func (r *Repository) ListWorkflowRunNodes(ctx context.Context, runID string) ([]model.WorkflowRunNode, error) {
+	rows, err := r.db.Pool.Query(ctx, `SELECT id,run_id,node_id,node_name,action,provider,status,started_at,ended_at,error,output,created_at,updated_at FROM workflow_run_nodes WHERE run_id=$1 ORDER BY created_at ASC`, runID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]model.WorkflowRunNode, 0)
+	for rows.Next() {
+		var m model.WorkflowRunNode
+		var outputRaw []byte
+		if err := rows.Scan(&m.ID, &m.RunID, &m.NodeID, &m.NodeName, &m.Action, &m.Provider, &m.Status, &m.StartedAt, &m.EndedAt, &m.Error, &outputRaw, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if len(outputRaw) > 0 {
+			_ = json.Unmarshal(outputRaw, &m.Output)
+		}
+		items = append(items, m)
+	}
+	return items, rows.Err()
+}
+
+func (r *Repository) AppendWorkflowRunEvent(ctx context.Context, in model.WorkflowRunEvent) (*model.WorkflowRunEvent, error) {
+	if in.ID == "" {
+		in.ID = uuid.NewString()
+	}
+	if in.CreatedAt.IsZero() {
+		in.CreatedAt = time.Now()
+	}
+	payloadRaw, _ := json.Marshal(in.Payload)
+	_, err := r.db.Pool.Exec(ctx, `INSERT INTO workflow_run_events(id,run_id,node_id,event_type,message,payload,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`, in.ID, in.RunID, in.NodeID, in.EventType, in.Message, payloadRaw, in.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &in, nil
+}
+
+func (r *Repository) ListWorkflowRunEvents(ctx context.Context, runID, nodeID string, since *time.Time, limit int) ([]model.WorkflowRunEvent, error) {
+	if limit <= 0 || limit > 1000 {
+		limit = 200
+	}
+	where := "WHERE run_id=$1"
+	args := []interface{}{runID}
+	argPos := 2
+	if nodeID != "" {
+		where += " AND node_id=$" + fmt.Sprintf("%d", argPos)
+		args = append(args, nodeID)
+		argPos++
+	}
+	if since != nil {
+		where += " AND created_at>$" + fmt.Sprintf("%d", argPos)
+		args = append(args, *since)
+		argPos++
+	}
+	args = append(args, limit)
+	query := `SELECT id,run_id,node_id,event_type,message,payload,created_at FROM workflow_run_events ` + where + ` ORDER BY created_at ASC LIMIT $` + fmt.Sprintf("%d", argPos)
+
+	rows, err := r.db.Pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]model.WorkflowRunEvent, 0)
+	for rows.Next() {
+		var m model.WorkflowRunEvent
+		var payloadRaw []byte
+		if err := rows.Scan(&m.ID, &m.RunID, &m.NodeID, &m.EventType, &m.Message, &payloadRaw, &m.CreatedAt); err != nil {
+			return nil, err
+		}
+		if len(payloadRaw) > 0 {
+			_ = json.Unmarshal(payloadRaw, &m.Payload)
 		}
 		items = append(items, m)
 	}

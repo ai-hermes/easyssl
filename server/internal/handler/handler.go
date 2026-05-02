@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -94,6 +95,14 @@ func (h *Handler) DeleteAccess(c *gin.Context) {
 	util.OK(c, gin.H{})
 }
 
+func (h *Handler) TestAccess(c *gin.Context) {
+	if err := h.svc.TestAccess(c, c.Param("id")); err != nil {
+		util.Err(c, 500, err.Error())
+		return
+	}
+	util.OK(c, gin.H{"testedAt": time.Now()})
+}
+
 func (h *Handler) ListWorkflows(c *gin.Context) {
 	items, err := h.svc.ListWorkflows(c)
 	if err != nil {
@@ -143,6 +152,40 @@ func (h *Handler) DeleteWorkflow(c *gin.Context) {
 
 func (h *Handler) ListWorkflowRuns(c *gin.Context) {
 	items, err := h.svc.ListWorkflowRuns(c, c.Param("id"))
+	if err != nil {
+		util.Err(c, 500, err.Error())
+		return
+	}
+	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
+}
+
+func (h *Handler) ListWorkflowRunNodes(c *gin.Context) {
+	items, err := h.svc.ListWorkflowRunNodes(c, c.Param("id"), c.Param("runId"))
+	if err != nil {
+		util.Err(c, 500, err.Error())
+		return
+	}
+	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
+}
+
+func (h *Handler) ListWorkflowRunEvents(c *gin.Context) {
+	var since *time.Time
+	if raw := c.Query("since"); raw != "" {
+		t, err := time.Parse(time.RFC3339, raw)
+		if err != nil {
+			util.Err(c, 400, "invalid since, must be RFC3339")
+			return
+		}
+		since = &t
+	}
+	limit := 200
+	if rawLimit := c.Query("limit"); rawLimit != "" {
+		var parsed int
+		if _, err := fmt.Sscanf(rawLimit, "%d", &parsed); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	items, err := h.svc.ListWorkflowRunEvents(c, c.Param("id"), c.Param("runId"), c.Query("nodeId"), since, limit)
 	if err != nil {
 		util.Err(c, 500, err.Error())
 		return
