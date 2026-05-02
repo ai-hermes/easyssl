@@ -41,7 +41,7 @@ This repository is split into two apps:
   - `docs(readme): ...`
   - `chore(web): ...`
 - Keep commits scoped to one concern and module (`server` vs `web`).
-- When a requirement is complete, create commits using the correct `scope` (for example `feat(server): ...`), push the branch to remote, and open a PR.
+- When a requirement is complete, create commits using the correct `scope` (for example `feat(server): ...`), then **must** push the branch to remote and create a PR.
 - PRs should include:
   - concise summary of behavior changes,
   - linked issue/task,
