@@ -19,6 +19,43 @@ export type Workflow = {
   graphContent: Record<string, unknown>;
   hasDraft: boolean;
   hasContent: boolean;
+  lastRunId?: string;
+  lastRunStatus?: string;
+  lastRunTime?: string;
+};
+
+export type WorkflowRun = {
+  id: string;
+  workflowId: string;
+  status: string;
+  trigger: string;
+  startedAt: string;
+  endedAt?: string;
+  error: string;
+};
+
+export type WorkflowRunNode = {
+  id: string;
+  runId: string;
+  nodeId: string;
+  nodeName: string;
+  action: string;
+  provider: string;
+  status: string;
+  startedAt?: string;
+  endedAt?: string;
+  error: string;
+  output?: Record<string, unknown>;
+};
+
+export type WorkflowRunEvent = {
+  id: string;
+  runId: string;
+  nodeId: string;
+  eventType: string;
+  message: string;
+  payload?: Record<string, unknown>;
+  createdAt: string;
 };
 
 export type Certificate = {
