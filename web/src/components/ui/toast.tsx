@@ -1,13 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { createContext, useContext } from "react";
+import { Toaster, toast } from "sonner";
 
 type ToastType = "success" | "error" | "info";
-
-type ToastItem = {
-  id: string;
-  type: ToastType;
-  text: string;
-};
 
 type ToastApi = {
   show: (type: ToastType, text: string) => void;
@@ -16,51 +10,34 @@ type ToastApi = {
   info: (text: string) => void;
 };
 
-const ToastContext = createContext<ToastApi | null>(null);
+const api: ToastApi = {
+  show: (type, text) => {
+    if (type === "success") {
+      toast.success(text);
+      return;
+    }
+    if (type === "error") {
+      toast.error(text);
+      return;
+    }
+    toast.message(text);
+  },
+  success: (text) => toast.success(text),
+  error: (text) => toast.error(text),
+  info: (text) => toast.message(text),
+};
 
-function clsByType(type: ToastType) {
-  if (type === "success") return "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]";
-  if (type === "error") return "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]";
-  return "bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]";
-}
+const ToastContext = createContext<ToastApi>(api);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<ToastItem[]>([]);
-
-  const show = useCallback((type: ToastType, text: string) => {
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    setItems((prev) => [...prev, { id, type, text }]);
-    window.setTimeout(() => {
-      setItems((prev) => prev.filter((x) => x.id !== id));
-    }, 2800);
-  }, []);
-
-  const api = useMemo<ToastApi>(
-    () => ({
-      show,
-      success: (text) => show("success", text),
-      error: (text) => show("error", text),
-      info: (text) => show("info", text),
-    }),
-    [show]
-  );
-
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[1000] flex max-w-sm flex-col gap-2">
-        {items.map((x) => (
-          <div key={x.id} className={cn("ds-card rounded-lg px-3 py-2 text-sm", clsByType(x.type))}>
-            {x.text}
-          </div>
-        ))}
-      </div>
+      <Toaster position="top-right" richColors closeButton duration={3000} />
     </ToastContext.Provider>
   );
 }
 
 export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx;
+  return useContext(ToastContext);
 }
