@@ -69,6 +69,32 @@ type WorkflowRun struct {
 	UpdatedAt  time.Time              `json:"updatedAt"`
 }
 
+type WorkflowRunNode struct {
+	ID        string                 `json:"id"`
+	RunID     string                 `json:"runId"`
+	NodeID    string                 `json:"nodeId"`
+	NodeName  string                 `json:"nodeName"`
+	Action    string                 `json:"action"`
+	Provider  string                 `json:"provider"`
+	Status    string                 `json:"status"`
+	StartedAt *time.Time             `json:"startedAt"`
+	EndedAt   *time.Time             `json:"endedAt"`
+	Error     string                 `json:"error"`
+	Output    map[string]interface{} `json:"output"`
+	CreatedAt time.Time              `json:"createdAt"`
+	UpdatedAt time.Time              `json:"updatedAt"`
+}
+
+type WorkflowRunEvent struct {
+	ID        string                 `json:"id"`
+	RunID     string                 `json:"runId"`
+	NodeID    string                 `json:"nodeId"`
+	EventType string                 `json:"eventType"`
+	Message   string                 `json:"message"`
+	Payload   map[string]interface{} `json:"payload"`
+	CreatedAt time.Time              `json:"createdAt"`
+}
+
 type Statistics struct {
 	CertificateTotal        int `json:"certificateTotal"`
 	CertificateExpiringSoon int `json:"certificateExpiringSoon"`

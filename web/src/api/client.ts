@@ -22,6 +22,15 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const resp = await fetch(`${API_BASE}${path}`, { ...init, headers });
   const data = (await resp.json()) as ApiResp<T>;
-  if (data.code !== 0) throw new Error(data.msg);
+  if (data.code !== 0) {
+    if (data.code === 401) {
+      clearToken();
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+      throw new Error("登录状态已过期，请重新登录");
+    }
+    throw new Error(data.msg);
+  }
   return data.data;
 }

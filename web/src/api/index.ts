@@ -1,5 +1,5 @@
 import { request } from "./client";
-import type { Access, Certificate, Workflow } from "@/types";
+import type { Access, Certificate, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
 
 export const api = {
   login: (email: string, password: string) => request<{ token: string; admin: { id: string; email: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -9,18 +9,29 @@ export const api = {
   listAccesses: () => request<{ items: Access[]; totalItems: number }>("/accesses"),
   saveAccess: (payload: Access) => request<Access>(payload.id ? `/accesses/${payload.id}` : "/accesses", { method: payload.id ? "PUT" : "POST", body: JSON.stringify(payload) }),
   deleteAccess: (id: string) => request<{}>(`/accesses/${id}`, { method: "DELETE" }),
+  testAccess: (id: string) => request<{ testedAt: string }>(`/accesses/${id}/test`, { method: "POST" }),
 
   listWorkflows: () => request<{ items: Workflow[]; totalItems: number }>("/workflows"),
   getWorkflow: (id: string) => request<Workflow>(`/workflows/${id}`),
   saveWorkflow: (payload: Workflow) => request<Workflow>(payload.id ? `/workflows/${payload.id}` : "/workflows", { method: payload.id ? "PUT" : "POST", body: JSON.stringify(payload) }),
   deleteWorkflow: (id: string) => request<{}>(`/workflows/${id}`, { method: "DELETE" }),
-  listWorkflowRuns: (id: string) => request<{ items: unknown[]; totalItems: number }>(`/workflows/${id}/runs`),
+  listWorkflowRuns: (id: string) => request<{ items: WorkflowRun[]; totalItems: number }>(`/workflows/${id}/runs`),
+  listWorkflowRunNodes: (id: string, runId: string) => request<{ items: WorkflowRunNode[]; totalItems: number }>(`/workflows/${id}/runs/${runId}/nodes`),
+  listWorkflowRunEvents: (id: string, runId: string, params?: { nodeId?: string; since?: string; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.nodeId) query.set("nodeId", params.nodeId);
+    if (params?.since) query.set("since", params.since);
+    if (params?.limit) query.set("limit", String(params.limit));
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return request<{ items: WorkflowRunEvent[]; totalItems: number }>(`/workflows/${id}/runs/${runId}/events${suffix}`);
+  },
   startWorkflowRun: (id: string) => request<{ runId: string }>(`/workflows/${id}/runs`, { method: "POST", body: JSON.stringify({ trigger: "manual" }) }),
   cancelWorkflowRun: (id: string, runId: string) => request<{}>(`/workflows/${id}/runs/${runId}/cancel`, { method: "POST" }),
   workflowStats: () => request<{ concurrency: number; pendingRunIds: string[]; processingRunIds: string[] }>("/workflows/stats"),
 
   listCertificates: () => request<{ items: Certificate[]; totalItems: number }>("/certificates"),
-  downloadCertificate: (id: string, format = "PEM") => request<{ fileBytes: string; fileFormat: string }>(`/certificates/${id}/download`, { method: "POST", body: JSON.stringify({ format }) }),
+  downloadCertificate: (id: string, format = "PEM") =>
+    request<{ fileName: string; fileFormat: string; mimeType: string; fileBytesBase64: string }>(`/certificates/${id}/download`, { method: "POST", body: JSON.stringify({ format }) }),
   revokeCertificate: (id: string) => request<{}>(`/certificates/${id}/revoke`, { method: "POST" }),
 
   statistics: () => request<{ certificateTotal: number; certificateExpiringSoon: number; certificateExpired: number; workflowTotal: number; workflowEnabled: number; workflowDisabled: number }>("/statistics"),

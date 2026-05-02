@@ -2,6 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ds-bg: #ffffff;
+  --ds-fg: #171717;
+  --ds-muted: #666666;
+  --ds-muted-2: #808080;
+  --ds-border: #ebebeb;
+  --ds-focus: hsla(212, 100%, 48%, 1);
+  --ds-success-fg: #116329;
+  --ds-success-bg: #e9f9ee;
+  --ds-warning-fg: #8f4d00;
+  --ds-warning-bg: #fff4e8;
+  --ds-danger-fg: #a01616;
+  --ds-danger-bg: #ffecec;
+  --ds-info-fg: #0a72ef;
+  --ds-info-bg: #ebf5ff;
+  --ds-card-shadow: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px, rgba(0, 0, 0, 0.04) 0px 2px 2px, rgba(0, 0, 0, 0.04) 0px 8px 8px -8px, #fafafa 0px 0px 0px 1px;
+}
+
 body {
-  font-family: "Inter", "PingFang SC", sans-serif;
+  font-family: "Geist", "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ds-fg);
+  background: var(--ds-bg);
+  font-feature-settings: "liga";
+}
+
+code,
+pre,
+.font-mono {
+  font-family: "Geist Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  outline-color: var(--ds-focus);
+}
+
+.ds-ring {
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+}
+
+.ds-card {
+  box-shadow: var(--ds-card-shadow);
+}
+
+.ds-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ds-scrollbar::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 9999px;
+}
+
+.ds-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }

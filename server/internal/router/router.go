@@ -40,6 +40,7 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	api.POST("/accesses", h.SaveAccess)
 	api.PUT("/accesses/:id", h.SaveAccess)
 	api.DELETE("/accesses/:id", h.DeleteAccess)
+	api.POST("/accesses/:id/test", h.TestAccess)
 
 	api.GET("/workflows", h.ListWorkflows)
 	api.POST("/workflows", h.SaveWorkflow)
@@ -47,6 +48,8 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	api.PUT("/workflows/:id", h.SaveWorkflow)
 	api.DELETE("/workflows/:id", h.DeleteWorkflow)
 	api.GET("/workflows/:id/runs", h.ListWorkflowRuns)
+	api.GET("/workflows/:id/runs/:runId/nodes", h.ListWorkflowRunNodes)
+	api.GET("/workflows/:id/runs/:runId/events", h.ListWorkflowRunEvents)
 	api.POST("/workflows/:id/runs", h.StartWorkflowRun)
 	api.POST("/workflows/:id/runs/:runId/cancel", h.CancelWorkflowRun)
 	api.GET("/workflows/stats", h.WorkflowStats)
