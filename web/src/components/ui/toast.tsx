@@ -13,18 +13,18 @@ type ToastApi = {
 const api: ToastApi = {
   show: (type, text) => {
     if (type === "success") {
-      toast.success(text);
+      toast.success(text, { className: "!bg-[var(--ds-success-bg)] !text-[var(--ds-success-fg)]" });
       return;
     }
     if (type === "error") {
-      toast.error(text);
+      toast.error(text, { className: "!bg-[var(--ds-danger-bg)] !text-[var(--ds-danger-fg)]" });
       return;
     }
-    toast.message(text);
+    toast.message(text, { className: "!bg-[var(--ds-info-bg)] !text-[var(--ds-info-fg)]" });
   },
-  success: (text) => toast.success(text),
-  error: (text) => toast.error(text),
-  info: (text) => toast.message(text),
+  success: (text) => toast.success(text, { className: "!bg-[var(--ds-success-bg)] !text-[var(--ds-success-fg)]" }),
+  error: (text) => toast.error(text, { className: "!bg-[var(--ds-danger-bg)] !text-[var(--ds-danger-fg)]" }),
+  info: (text) => toast.message(text, { className: "!bg-[var(--ds-info-bg)] !text-[var(--ds-info-fg)]" }),
 };
 
 const ToastContext = createContext<ToastApi>(api);
@@ -33,7 +33,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <Toaster position="top-right" richColors closeButton duration={3000} />
+      <Toaster position="top-right" closeButton duration={2800} />
     </ToastContext.Provider>
   );
 }

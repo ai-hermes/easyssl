@@ -4,35 +4,69 @@
 
 @layer base {
   :root {
+    --radius: 8px;
+
     --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --ring: 215 20.2% 65.1%;
-    --radius: 0.625rem;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 73% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 92%;
+    --input: 0 0% 92%;
+    --ring: 212 100% 48%;
+
+    /* DESIGN.md semantic aliases */
+    --ds-bg: #ffffff;
+    --ds-fg: #171717;
+    --ds-muted: #666666;
+    --ds-muted-2: #808080;
+    --ds-border: #ebebeb;
+    --ds-focus: hsla(212, 100%, 48%, 1);
+
+    --ds-success-fg: #116329;
+    --ds-success-bg: #e9f9ee;
+    --ds-warning-fg: #8f4d00;
+    --ds-warning-bg: #fff4e8;
+    --ds-danger-fg: #a01616;
+    --ds-danger-bg: #ffecec;
+    --ds-info-fg: #0a72ef;
+    --ds-info-bg: #ebf5ff;
+
+    --ds-card-shadow: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px, rgba(0, 0, 0, 0.04) 0px 2px 2px, rgba(0, 0, 0, 0.04) 0px 8px 8px -8px, #fafafa 0px 0px 0px 1px;
+    --ds-ring-shadow: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
   }
 
   * {
     @apply border-border;
+    outline-color: var(--ds-focus);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: "Geist", "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
     font-feature-settings: "liga";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    letter-spacing: -0.02em;
   }
 
   code,
@@ -43,13 +77,22 @@
 }
 
 @layer components {
+  .ds-ring {
+    box-shadow: var(--ds-ring-shadow);
+  }
+
+  .ds-card {
+    box-shadow: var(--ds-card-shadow);
+  }
+
   .ds-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   .ds-scrollbar::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-muted-foreground/35;
+    background: #d4d4d4;
+    border-radius: 9999px;
   }
 
   .ds-scrollbar::-webkit-scrollbar-track {

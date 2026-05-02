@@ -9,11 +9,11 @@ function MetricCard({ title, value, hint }: { title: string; value: number; hint
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">{title}</CardTitle>
+        <CardTitle className="text-xs uppercase tracking-wide text-[#808080]">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-semibold tracking-tight">{value}</div>
-        {hint ? <div className="mt-2 text-xs text-muted-foreground">{hint}</div> : null}
+        <div className="text-3xl font-semibold tracking-[-0.04em] text-[#171717]">{value}</div>
+        {hint ? <div className="mt-2 text-xs text-[#666]">{hint}</div> : null}
       </CardContent>
     </Card>
   );
@@ -40,13 +40,13 @@ export default function DashboardPage() {
       <Card>
         <CardContent className="flex flex-wrap items-center gap-4 p-4">
           <div>
-            <div className="text-sm font-medium">调度器状态</div>
-            <div className="text-xs text-muted-foreground">并发与队列状态实时反映调度压力</div>
+            <div className="text-sm font-medium text-[#171717]">调度器状态</div>
+            <div className="text-xs text-[#666]">并发与队列状态实时反映调度压力</div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Badge variant="secondary">并发: {ws?.concurrency ?? 0}</Badge>
-            <Badge className="border-transparent bg-amber-100 text-amber-700">等待: {pendingCount}</Badge>
-            <Badge className="border-transparent bg-blue-100 text-blue-700">执行中: {processingCount}</Badge>
+            <Badge variant="outline" className="border-transparent bg-[#f5f5f5] text-[#666]">并发: {ws?.concurrency ?? 0}</Badge>
+            <Badge className="border-transparent bg-[var(--ds-warning-bg)] text-[var(--ds-warning-fg)]">等待: {pendingCount}</Badge>
+            <Badge className="border-transparent bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]">执行中: {processingCount}</Badge>
           </div>
         </CardContent>
       </Card>
@@ -72,12 +72,12 @@ export default function DashboardPage() {
                     <TableCell>
                       <StatusBadge status={w.lastRunStatus} />
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{w.lastRunTime ? new Date(w.lastRunTime).toLocaleString() : "-"}</TableCell>
+                    <TableCell className="text-[#666]">{w.lastRunTime ? new Date(w.lastRunTime).toLocaleString() : "-"}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell className="text-muted-foreground" colSpan={3}>
+                  <TableCell className="text-[#808080]" colSpan={3}>
                     暂无工作流数据
                   </TableCell>
                 </TableRow>

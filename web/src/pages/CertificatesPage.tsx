@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 
 export default function CertificatesPage() {
@@ -12,28 +13,30 @@ export default function CertificatesPage() {
 
   return (
     <Card>
-      <div className="mb-3 text-sm font-medium">证书列表</div>
-      <div className="overflow-x-auto ds-scrollbar">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-              <th className="pb-2">SAN</th>
-              <th className="pb-2">算法</th>
-              <th className="pb-2">到期时间</th>
-              <th className="pb-2">状态</th>
-              <th className="pb-2 text-right">动作</th>
-            </tr>
-          </thead>
-          <tbody>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">证书列表</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>SAN</TableHead>
+              <TableHead>算法</TableHead>
+              <TableHead>到期时间</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead className="text-right">动作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {data?.items.map((c) => (
-              <tr key={c.id} className="border-t border-[#f1f1f1]">
-                <td className="py-2">{c.subjectAltNames}</td>
-                <td>{c.keyAlgorithm || "-"}</td>
-                <td>{c.validityNotAfter ? new Date(c.validityNotAfter).toLocaleString() : "-"}</td>
-                <td>
+              <TableRow key={c.id}>
+                <TableCell>{c.subjectAltNames}</TableCell>
+                <TableCell>{c.keyAlgorithm || "-"}</TableCell>
+                <TableCell>{c.validityNotAfter ? new Date(c.validityNotAfter).toLocaleString() : "-"}</TableCell>
+                <TableCell>
                   <StatusBadge status={c.isRevoked ? "failed" : "succeeded"} className="min-w-[56px] justify-center" />
-                </td>
-                <td className="space-x-2 text-right">
+                </TableCell>
+                <TableCell className="space-x-2 text-right">
                   <Button
                     size="sm"
                     onClick={async () => {
@@ -64,12 +67,12 @@ export default function CertificatesPage() {
                   >
                     吊销
                   </Button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </CardContent>
     </Card>
   );
 }
