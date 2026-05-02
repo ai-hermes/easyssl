@@ -1,0 +1,153 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            server:
+              - "server/**"
+              - ".env.example"
+              - "docker-compose.yml"
+              - ".github/workflows/**"
+            web:
+              - "web/**"
+              - ".github/workflows/**"
+
+  server:
+    name: Server CI
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: easyssl
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d easyssl"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        shell: bash
+        working-directory: server
+    env:
+      LISTEN_ADDR: 127.0.0.1:8090
+      JWT_SECRET: easyssl-ci-secret
+      PG_HOST: 127.0.0.1
+      PG_PORT: 5432
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_DATABASE: easyssl
+      PG_SSLMODE: disable
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Run Go tests
+        run: go test ./...
+
+      - name: Build server binaries
+        run: |
+          go build -o /tmp/easyssl-api ./cmd/api
+          go build -o /tmp/easyssl-migrate ./cmd/migrate
+
+      - name: Apply database migrations
+        run: /tmp/easyssl-migrate
+
+      - name: Smoke test API startup
+        run: |
+          /tmp/easyssl-api > /tmp/easyssl-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid"' EXIT
+
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8090/healthz >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/easyssl-api.log
+          exit 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          push: false
+          tags: easyssl-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  web:
+    name: Web CI
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
