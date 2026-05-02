@@ -161,11 +161,11 @@ func inferNodeAction(node graphNode) string {
 	name := strings.ToLower(strings.TrimSpace(node.Data.Name))
 	provider := readProvider(node.Data.Config)
 
-	if t == "input" || t == "output" || t == "start" || t == "end" {
-		return ""
+	if t == "input" || t == "start" || id == "start" || name == "start" {
+		return "start"
 	}
-	if id == "start" || id == "end" || name == "start" || name == "end" {
-		return ""
+	if t == "output" || t == "end" || id == "end" || name == "end" {
+		return "end"
 	}
 
 	if t == "apply" || t == "bizapply" || strings.Contains(id, "apply") || strings.Contains(name, "apply") {
@@ -299,12 +299,17 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 	certByNodeID := map[string]*model.Certificate{}
 	var latestCert *model.Certificate
 	applyCount := 0
+	statusByNodeID := map[string]string{}
 
 	upsertNode := func(node graphNode, action, provider, status string, startedAt, endedAt *time.Time, errMsg string, output map[string]interface{}) {
+		nodeName := strings.TrimSpace(node.Data.Name)
+		if nodeName == "" {
+			nodeName = node.ID
+		}
 		_, _ = d.repo.UpsertWorkflowRunNode(context.Background(), model.WorkflowRunNode{
 			RunID:     run.ID,
 			NodeID:    node.ID,
-			NodeName:  node.Data.Name,
+			NodeName:  nodeName,
 			Action:    action,
 			Provider:  provider,
 			Status:    status,
@@ -313,6 +318,7 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 			Error:     errMsg,
 			Output:    output,
 		})
+		statusByNodeID[node.ID] = status
 	}
 	appendEvent := func(nodeID, eventType, message string, payload map[string]interface{}) {
 		_, _ = d.repo.AppendWorkflowRunEvent(context.Background(), model.WorkflowRunEvent{
@@ -325,19 +331,52 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 	}
 
 	for _, node := range nodes {
+		action := inferNodeAction(node)
+		cfg := node.Data.Config
+		nodeProvider := readProvider(cfg)
+		if action == "apply" {
+			nodeProvider = normalizeDNSProvider(nodeProvider)
+		}
+		upsertNode(node, action, nodeProvider, "pending", nil, nil, "", nil)
+	}
+
+	markPendingAsSkipped := func(fromIndex int, reason string) {
+		endedAt := time.Now()
+		for i := fromIndex; i < len(nodes); i++ {
+			node := nodes[i]
+			if statusByNodeID[node.ID] != "pending" {
+				continue
+			}
+			action := inferNodeAction(node)
+			cfg := node.Data.Config
+			nodeProvider := readProvider(cfg)
+			if action == "apply" {
+				nodeProvider = normalizeDNSProvider(nodeProvider)
+			}
+			upsertNode(node, action, nodeProvider, "skipped", nil, &endedAt, "", nil)
+			appendEvent(node.ID, "skipped", reason, nil)
+		}
+	}
+
+	for idx, node := range nodes {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 
 		action := inferNodeAction(node)
 		cfg := node.Data.Config
-		if cfg == nil || action == "" {
-			continue
-		}
 		nodeProvider := readProvider(cfg)
 		if action == "apply" {
 			nodeProvider = normalizeDNSProvider(nodeProvider)
 		}
+
+		if action == "" {
+			endedAt := time.Now()
+			upsertNode(node, action, nodeProvider, "skipped", nil, &endedAt, "", nil)
+			appendEvent(node.ID, "skipped", "node ignored: unsupported action", nil)
+			continue
+		}
+
 		startedAt := time.Now()
 		upsertNode(node, action, nodeProvider, "running", &startedAt, nil, "", nil)
 		appendEvent(node.ID, "started", "node started", map[string]interface{}{"action": action, "provider": nodeProvider})
@@ -346,10 +385,15 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 			endedAt := time.Now()
 			upsertNode(node, action, nodeProvider, "failed", &startedAt, &endedAt, err.Error(), nil)
 			appendEvent(node.ID, "failed", err.Error(), nil)
+			markPendingAsSkipped(idx+1, "skipped due to previous node failure")
 			return err
 		}
 
 		switch action {
+		case "start", "end":
+			endedAt := time.Now()
+			upsertNode(node, action, nodeProvider, "succeeded", &startedAt, &endedAt, "", nil)
+			appendEvent(node.ID, "succeeded", "node completed", nil)
 		case "apply":
 			nodeProvider = normalizeDNSProvider(readProvider(cfg))
 			accessID := readAccessID(cfg)
@@ -481,6 +525,7 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 	}
 
 	if applyCount == 0 {
+		markPendingAsSkipped(0, "skipped due to workflow failure")
 		return fmt.Errorf("workflow has no apply node")
 	}
 	return nil

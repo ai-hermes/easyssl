@@ -21,6 +21,9 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	r.Use(gin.Logger(), gin.Recovery())
 
 	repo := repository.New(database)
+	if err := repo.EnsureWorkflowRunTables(context.Background()); err != nil {
+		panic(err)
+	}
 	dispatcher := workflow.NewDispatcher(repo, 2)
 	svc := service.New(repo, cfg.JWTSecret, dispatcher)
 	_ = svc.EnsureBootstrapAdmin(context.Background(), "admin@easyssl.local", "1234567890")

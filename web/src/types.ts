@@ -31,6 +31,7 @@ export type WorkflowRun = {
   trigger: string;
   startedAt: string;
   endedAt?: string;
+  graph?: Record<string, unknown>;
   error: string;
 };
 

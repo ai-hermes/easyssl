@@ -24,6 +24,20 @@ func New(database *db.DB) *Repository {
 	return &Repository{db: database}
 }
 
+func (r *Repository) EnsureWorkflowRunTables(ctx context.Context) error {
+	required := []string{"workflow_run_nodes", "workflow_run_events"}
+	for _, table := range required {
+		var regClass *string
+		if err := r.db.Pool.QueryRow(ctx, `SELECT to_regclass($1)`, "public."+table).Scan(&regClass); err != nil {
+			return err
+		}
+		if regClass == nil || *regClass == "" {
+			return fmt.Errorf("missing required table %s: run `cd server && go run ./cmd/migrate`", table)
+		}
+	}
+	return nil
+}
+
 func (r *Repository) CreateAdmin(ctx context.Context, email, passwordHash string) (*model.Admin, error) {
 	id := uuid.NewString()
 	now := time.Now()
