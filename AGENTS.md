@@ -24,6 +24,7 @@ This repository is split into two apps:
 ## Coding Style & Naming Conventions
 - Go: format with `gofmt` (or `go fmt ./...`), keep packages lowercase, exported names in `PascalCase`.
 - TypeScript/React: 2-space indentation, `PascalCase` for page/component files (for example `DashboardPage.tsx`), camelCase for functions/variables.
+- Frontend implementation must follow `DESIGN.md` (in repo root) as the primary design reference.
 - Prefer `@/` imports in web code (`@` maps to `web/src`).
 - Keep handlers/services/repositories separated by responsibility; avoid cross-layer shortcuts.
 
