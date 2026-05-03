@@ -50,6 +50,32 @@ npm run dev
 
 Visit: `http://127.0.0.1:5173`
 
+## OpenAPI (X-API-Key) quick flow
+
+1. Login and create API Key:
+   - `POST /api/auth/login`
+   - `POST /api/auth/api-keys` (returns one-time `token`)
+2. Use `X-API-Key` to apply certificate:
+
+```bash
+curl -X POST "http://127.0.0.1:8090/api/open/certificates/apply" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: esk_xxx" \
+  -d '{
+    "provider": "tencentcloud",
+    "accessId": "your-access-id",
+    "domains": ["ssl1.example.com", "*.example.com"],
+    "caProvider": "letsencrypt",
+    "keyAlgorithm": "RSA2048"
+  }'
+```
+
+3. Poll run status and events:
+   - `GET /api/open/certificates/runs/{runId}`
+   - `GET /api/open/certificates/runs/{runId}/events`
+
+Swagger UI: `http://127.0.0.1:8090/swagger/index.html`
+
 ## Provider 配置案例
 
 先在「Access 授权管理」创建授权，工作流节点里的 `accessId` 引用对应授权记录 `id`。
