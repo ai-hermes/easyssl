@@ -447,6 +447,7 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 			}
 
 			saved, err := d.repo.SaveCertificate(ctx, model.Certificate{
+				OwnerUserID:      run.OwnerUserID,
 				Source:           "request",
 				SubjectAltNames:  parsed.SubjectAltNames,
 				SerialNumber:     parsed.SerialNumber,

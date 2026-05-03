@@ -8,11 +8,27 @@ import (
 	"syscall"
 	"time"
 
+	_ "easyssl/server/docs"
 	"easyssl/server/internal/config"
 	"easyssl/server/internal/db"
 	"easyssl/server/internal/router"
 )
 
+// @title EasySSL API
+// @version 1.0
+// @description EasySSL service APIs.
+// @description 1) Call POST /api/auth/login to get JWT token.
+// @description 2) Call POST /api/auth/api-keys to generate API key token (shown once).
+// @description 3) Call OpenAPI certificate apply endpoints with `X-API-Key: <token>`.
+// @description 4) Other business APIs support `Authorization: Bearer <token>` or `X-API-Key: <token>`.
+// @BasePath /api
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Use format: Bearer <token>
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-Key
 func main() {
 	cfg := config.Load()
 

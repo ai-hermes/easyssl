@@ -1,14 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function MetricCard({ title, value, hint }: { title: string; value: number; hint?: string }) {
   return (
     <Card>
-      <div className="text-xs uppercase tracking-wide text-[#808080]">{title}</div>
-      <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#171717]">{value}</div>
-      {hint ? <div className="mt-2 text-xs text-[#666]">{hint}</div> : null}
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs uppercase tracking-wide text-[#808080]">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-semibold tracking-[-0.04em] text-[#171717]">{value}</div>
+        {hint ? <div className="mt-2 text-xs text-[#666]">{hint}</div> : null}
+      </CardContent>
     </Card>
   );
 }
@@ -32,51 +38,53 @@ export default function DashboardPage() {
       </div>
 
       <Card>
-        <div className="flex flex-wrap items-center gap-4">
+        <CardContent className="flex flex-wrap items-center gap-4 p-4">
           <div>
             <div className="text-sm font-medium text-[#171717]">调度器状态</div>
             <div className="text-xs text-[#666]">并发与队列状态实时反映调度压力</div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <span className="rounded-full bg-[#f5f5f5] px-2.5 py-1 text-xs text-[#666]">并发: {ws?.concurrency ?? 0}</span>
-            <span className="rounded-full bg-[var(--ds-warning-bg)] px-2.5 py-1 text-xs text-[var(--ds-warning-fg)]">等待: {pendingCount}</span>
-            <span className="rounded-full bg-[var(--ds-info-bg)] px-2.5 py-1 text-xs text-[var(--ds-info-fg)]">执行中: {processingCount}</span>
+            <Badge variant="outline" className="border-transparent bg-[#f5f5f5] text-[#666]">并发: {ws?.concurrency ?? 0}</Badge>
+            <Badge className="border-transparent bg-[var(--ds-warning-bg)] text-[var(--ds-warning-fg)]">等待: {pendingCount}</Badge>
+            <Badge className="border-transparent bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]">执行中: {processingCount}</Badge>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       <Card>
-        <div className="mb-3 text-sm font-medium text-[#171717]">最近工作流运行</div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                <th className="pb-2">工作流</th>
-                <th className="pb-2">最近状态</th>
-                <th className="pb-2">最近时间</th>
-              </tr>
-            </thead>
-            <tbody>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">最近工作流运行</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>工作流</TableHead>
+                <TableHead>最近状态</TableHead>
+                <TableHead>最近时间</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {recent.length ? (
                 recent.map((w) => (
-                  <tr key={w.id} className="border-t border-[#f1f1f1]">
-                    <td className="py-3 text-[#171717]">{w.name}</td>
-                    <td className="py-3">
+                  <TableRow key={w.id}>
+                    <TableCell>{w.name}</TableCell>
+                    <TableCell>
                       <StatusBadge status={w.lastRunStatus} />
-                    </td>
-                    <td className="py-3 text-[#666]">{w.lastRunTime ? new Date(w.lastRunTime).toLocaleString() : "-"}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-[#666]">{w.lastRunTime ? new Date(w.lastRunTime).toLocaleString() : "-"}</TableCell>
+                  </TableRow>
                 ))
               ) : (
-                <tr>
-                  <td className="py-3 text-[#808080]" colSpan={3}>
+                <TableRow>
+                  <TableCell className="text-[#808080]" colSpan={3}>
                     暂无工作流数据
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
     </div>
   );

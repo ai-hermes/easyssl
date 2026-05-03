@@ -16,12 +16,12 @@ export default function Layout() {
   const location = useLocation();
   const title = items.find((x) => x[0] === location.pathname)?.[1] || "EasySSL";
   return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-40 border-b border-[#ebebeb] bg-white/90 backdrop-blur">
+    <div className="min-h-screen bg-[var(--ds-bg)]">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur" style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}>
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="text-base font-semibold tracking-[-0.02em]">EasySSL</div>
-            <Badge className="bg-[#ebf5ff] text-[#0068d6]">Workflow SSL</Badge>
+            <div className="text-base font-semibold tracking-[-0.02em] text-[#171717]">EasySSL</div>
+            <Badge variant="secondary">Workflow SSL</Badge>
           </div>
           <div className="flex items-center gap-1">
             {items.map(([to, name]) => (
@@ -30,7 +30,7 @@ export default function Layout() {
                 to={to}
                 className={({ isActive }) =>
                   `rounded-md px-3 py-1.5 text-sm transition ${
-                    isActive ? "ds-ring bg-white text-[#171717] font-medium" : "text-[#666] hover:bg-[#fafafa] hover:text-[#171717]"
+                    isActive ? "bg-white text-[#171717] font-medium shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]" : "text-[#666] hover:bg-[#fafafa] hover:text-[#171717]"
                   }`
                 }
               >

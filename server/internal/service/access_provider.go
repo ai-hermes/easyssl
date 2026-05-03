@@ -246,7 +246,7 @@ func (s *Service) normalizeAndValidateAccessConfig(in model.Access, current *mod
 	}
 }
 
-func (s *Service) prepareAccess(ctx context.Context, in model.Access) (model.Access, error) {
+func (s *Service) prepareAccess(ctx context.Context, auth model.AuthContext, in model.Access) (model.Access, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	in.Provider = normalizeProvider(in.Provider)
 
@@ -259,7 +259,7 @@ func (s *Service) prepareAccess(ctx context.Context, in model.Access) (model.Acc
 
 	var current *model.Access
 	if in.ID != "" {
-		old, err := s.repo.GetAccessByID(ctx, in.ID)
+		old, err := s.repo.GetAccessByIDForUser(ctx, in.ID, auth.UserID, auth.Role)
 		if err != nil {
 			if err == repository.ErrNotFound {
 				return in, fmt.Errorf("access not found")

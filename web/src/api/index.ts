@@ -1,10 +1,17 @@
 import { request } from "./client";
-import type { Access, Certificate, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
+import type { APIKeyItem, Access, Certificate, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
 
 export const api = {
   login: (email: string, password: string) => request<{ token: string; admin: { id: string; email: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => request<{ id: string; email: string }>("/auth/me"),
   changePassword: (password: string) => request<{}>("/auth/password", { method: "PUT", body: JSON.stringify({ password }) }),
+  createAPIKey: (payload: { name: string; expiresAt?: string }) =>
+    request<{ id: string; name: string; prefix: string; status: string; expiresAt?: string; createdAt: string; token: string }>("/auth/api-keys", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  listAPIKeys: () => request<{ items: APIKeyItem[]; totalItems: number }>("/auth/api-keys"),
+  revokeAPIKey: (id: string) => request<{}>(`/auth/api-keys/${id}`, { method: "DELETE" }),
 
   listAccesses: () => request<{ items: Access[]; totalItems: number }>("/accesses"),
   saveAccess: (payload: Access) => request<Access>(payload.id ? `/accesses/${payload.id}` : "/accesses", { method: payload.id ? "PUT" : "POST", body: JSON.stringify(payload) }),

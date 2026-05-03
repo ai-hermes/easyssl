@@ -14,6 +14,8 @@ import (
 	"easyssl/server/internal/workflow"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func New(cfg config.Config, database *db.DB) *gin.Engine {
@@ -30,14 +32,18 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	h := handler.New(svc)
 
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	auth := r.Group("/api/auth")
 	auth.POST("/login", h.Login)
 
 	api := r.Group("/api")
-	api.Use(middleware.RequireAuth(cfg.JWTSecret))
+	api.Use(middleware.RequireAuth(cfg.JWTSecret, svc))
 	api.GET("/auth/me", h.Me)
 	api.PUT("/auth/password", h.ChangePassword)
+	api.POST("/auth/api-keys", h.CreateAPIKey)
+	api.GET("/auth/api-keys", h.ListAPIKeys)
+	api.DELETE("/auth/api-keys/:id", h.RevokeAPIKey)
 
 	api.GET("/accesses", h.ListAccesses)
 	api.POST("/accesses", h.SaveAccess)
@@ -63,6 +69,12 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 
 	api.GET("/statistics", h.Statistics)
 	api.POST("/notifications/test", h.TestNotification)
+
+	open := r.Group("/api/open")
+	open.Use(middleware.RequireAPIKeyAuth(svc))
+	open.POST("/certificates/apply", h.OpenApplyCertificate)
+	open.GET("/certificates/runs/:runId", h.GetOpenCertificateRun)
+	open.GET("/certificates/runs/:runId/events", h.ListOpenCertificateRunEvents)
 
 	if _, err := os.Stat("../web/dist/index.html"); err == nil {
 		r.Static("/assets", "../web/dist/assets")
