@@ -7,7 +7,7 @@ import YAML from "js-yaml";
 
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,7 +65,7 @@ function WorkflowPreviewNode({ data }: NodeProps<FlowNodeData>) {
         <Handle
           type="source"
           position={Position.Bottom}
-          style={{ left: "50%", bottom: 0,  }}
+          style={{ left: "50%", bottom: 0, transform: "translate(-50%, 70%)" }}
         />
       ) : null}
     </div>
@@ -601,22 +601,24 @@ export default function WorkflowsPage() {
         <div className={`rounded-full px-2.5 py-1 text-xs w-fit ${runNotice.type === "error" ? "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]" : runNotice.type === "success" ? "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]" : "bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]"}`}>{runNotice.text}</div>
       ) : null}
 
+      <div className="flex justify-end">
+        <Button onClick={openCreate}>新增工作流</Button>
+      </div>
+
       <Card>
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <div className="text-base font-semibold tracking-[-0.02em]">Workflows</div>
-            <div className="text-xs text-[#666]">默认仅展示工作流列表。</div>
-          </div>
-          <Button onClick={openCreate}>新增工作流</Button>
-        </div>
-        <div className="overflow-x-auto ds-scrollbar">
+        <CardHeader className="pb-2">
+          <div className="text-base font-semibold tracking-[-0.02em]">Workflows</div>
+          <div className="text-xs text-[#666]">默认仅展示工作流列表。</div>
+        </CardHeader>
+
+        <CardContent className="pt-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                <th className="pb-2">名称</th>
-                <th className="pb-2">最近运行</th>
-                <th className="pb-2">最近时间</th>
-                <th className="pb-2 text-right">动作</th>
+                <th className="px-2 pb-3 pt-1">名称</th>
+                <th className="px-2 pb-3 pt-1">最近运行</th>
+                <th className="px-2 pb-3 pt-1">最近时间</th>
+                <th className="px-2 pb-3 pt-1 text-right">动作</th>
               </tr>
             </thead>
             <tbody>
@@ -633,10 +635,10 @@ export default function WorkflowsPage() {
                       setRunDrawerOpen(false);
                     }}
                   >
-                    <td className={`py-2 ${selected ? "text-[#171717] font-medium" : ""}`}>{w.name}</td>
-                    <td className="py-2"><StatusBadge status={w.lastRunStatus} /></td>
-                    <td className="py-2 text-[#666]">{formatDateTime(w.lastRunTime)}</td>
-                    <td className="space-x-2 py-2 text-right">
+                    <td className={`px-2 py-3 ${selected ? "text-[#171717] font-medium" : ""}`}>{w.name}</td>
+                    <td className="px-2 py-3"><StatusBadge status={w.lastRunStatus} /></td>
+                    <td className="px-2 py-3 text-[#666]">{formatDateTime(w.lastRunTime)}</td>
+                    <td className="px-2 py-3 space-x-2 text-right">
                       <Button
                         size="sm"
                         variant="outline"
@@ -681,7 +683,7 @@ export default function WorkflowsPage() {
               })}
             </tbody>
           </table>
-        </div>
+        </CardContent>
       </Card>
 
       {selectedWorkflowID ? (
@@ -694,10 +696,10 @@ export default function WorkflowsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                  <th className="pb-2">Run ID</th>
-                  <th className="pb-2">状态</th>
-                  <th className="pb-2">开始</th>
-                  <th className="pb-2">结束</th>
+                  <th className="px-2 pb-3 pt-1">Run ID</th>
+                  <th className="px-2 pb-3 pt-1">状态</th>
+                  <th className="px-2 pb-3 pt-1">开始</th>
+                  <th className="px-2 pb-3 pt-1">结束</th>
                 </tr>
               </thead>
               <tbody>
@@ -712,14 +714,14 @@ export default function WorkflowsPage() {
                         setRunDrawerOpen(true);
                       }}
                     >
-                      <td className="py-2 font-mono text-xs">{run.id}</td>
-                      <td className="py-2"><StatusBadge status={run.status} /></td>
-                      <td className="py-2 text-xs text-[#666]">{formatDateTime(run.startedAt)}</td>
-                      <td className="py-2 text-xs text-[#666]">{formatDateTime(run.endedAt)}</td>
+                      <td className="px-2 py-3 font-mono text-xs">{run.id}</td>
+                      <td className="px-2 py-3"><StatusBadge status={run.status} /></td>
+                      <td className="px-2 py-3 text-xs text-[#666]">{formatDateTime(run.startedAt)}</td>
+                      <td className="px-2 py-3 text-xs text-[#666]">{formatDateTime(run.endedAt)}</td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="py-3 text-[#808080]" colSpan={4}>{runsQuery.isFetching ? "加载中..." : "暂无运行记录"}</td></tr>
+                  <tr><td className="px-2 py-3 text-[#808080]" colSpan={4}>{runsQuery.isFetching ? "加载中..." : "暂无运行记录"}</td></tr>
                 )}
               </tbody>
             </table>

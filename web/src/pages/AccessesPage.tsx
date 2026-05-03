@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import type { Access } from "@/types";
@@ -285,47 +285,48 @@ export default function AccessesPage() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={openCreate}>新增授权</Button>
+      </div>
+
       <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold tracking-[-0.02em]">授权列表</h2>
-            <p className="text-sm text-[#666]">先新增授权，再在工作流节点中引用对应 accessId。</p>
-          </div>
-          <Button onClick={openCreate}>新增授权</Button>
-        </div>
+        <CardHeader className="pb-2">
+          <h2 className="text-lg font-semibold tracking-[-0.02em]">授权列表</h2>
+          <p className="text-xs text-[#666]">先新增授权，再在工作流节点中引用对应 accessId。</p>
+        </CardHeader>
 
-        {notice ? (
-          <div
-            className={`mb-3 rounded-md px-3 py-2 text-sm ${
-              notice.type === "error"
-                ? "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]"
-                : notice.type === "success"
-                  ? "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]"
-                  : "bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]"
-            }`}
-          >
-            {notice.text}
-          </div>
-        ) : null}
+        <CardContent className="pt-0">
+          {notice ? (
+            <div
+              className={`mb-3 rounded-md px-3 py-2 text-sm ${
+                notice.type === "error"
+                  ? "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]"
+                  : notice.type === "success"
+                    ? "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]"
+                    : "bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]"
+              }`}
+            >
+              {notice.text}
+            </div>
+          ) : null}
 
-        <div className="overflow-x-auto ds-scrollbar">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                <th className="pb-2">名称</th>
-                <th className="pb-2">ID</th>
-                <th className="pb-2">Provider</th>
-                <th className="pb-2">配置</th>
-                <th className="pb-2 text-right">动作</th>
+                <th className="px-2 pb-3 pt-1">名称</th>
+                <th className="px-2 pb-3 pt-1">ID</th>
+                <th className="px-2 pb-3 pt-1">Provider</th>
+                <th className="px-2 pb-3 pt-1">配置</th>
+                <th className="px-2 pb-3 pt-1 text-right">动作</th>
               </tr>
             </thead>
             <tbody>
               {data?.items.map((x) => (
                 <tr key={x.id} className="border-t border-[#f1f1f1]">
-                  <td className="py-2">{x.name}</td>
-                  <td className="font-mono text-xs text-[#666]">{x.id}</td>
-                  <td>{x.provider}</td>
-                  <td className="text-xs text-[#666]">
+                  <td className="px-2 py-3">{x.name}</td>
+                  <td className="px-2 py-3 font-mono text-xs text-[#666]">{x.id}</td>
+                  <td className="px-2 py-3">{x.provider}</td>
+                  <td className="px-2 py-3 text-xs text-[#666]">
                     {x.provider === "aliyun"
                       ? (() => {
                           const cfg = readAliyunConfig(x.config);
@@ -347,7 +348,7 @@ export default function AccessesPage() {
                               return `${cfg.username}@${cfg.host}:${cfg.port} (${cfg.authMethod})`;
                             })()}
                   </td>
-                  <td className="space-x-2 text-right">
+                  <td className="px-2 py-3 space-x-2 text-right">
                     <Button size="sm" variant="outline" onClick={() => startEdit(x)}>
                       编辑
                     </Button>
@@ -370,7 +371,7 @@ export default function AccessesPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </CardContent>
       </Card>
 
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>

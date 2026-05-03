@@ -67,3 +67,13 @@ export type Certificate = {
   validityNotAfter?: string;
   isRevoked: boolean;
 };
+
+export type APIKeyItem = {
+  id: string;
+  name: string;
+  prefix: string;
+  status: string;
+  expiresAt?: string;
+  lastUsedAt?: string;
+  createdAt: string;
+};

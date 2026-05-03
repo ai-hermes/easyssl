@@ -1,0 +1,716 @@
+basePath: /api
+definitions:
+  model.OpenApplyCertificateRequest:
+    properties:
+      accessId:
+        type: string
+      caProvider:
+        type: string
+      contactEmail:
+        type: string
+      dnsPropagationTimeout:
+        type: integer
+      dnsTTL:
+        type: integer
+      domains:
+        items:
+          type: string
+        type: array
+      keyAlgorithm:
+        type: string
+      provider:
+        type: string
+    type: object
+  util.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      msg:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    EasySSL service APIs.
+    1) Call POST /api/auth/login to get JWT token.
+    2) Call POST /api/auth/api-keys to generate API key token (shown once).
+    3) Call OpenAPI certificate apply endpoints with `X-API-Key: <token>`.
+    4) Other business APIs support `Authorization: Bearer <token>` or `X-API-Key: <token>`.
+  title: EasySSL API
+  version: "1.0"
+paths:
+  /accesses:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List accesses
+      tags:
+      - Access
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: access
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Create or update access
+      tags:
+      - Access
+  /accesses/{id}:
+    delete:
+      parameters:
+      - description: Access id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Delete access
+      tags:
+      - Access
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Access id
+        in: path
+        name: id
+        type: string
+      - description: access
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Create or update access
+      tags:
+      - Access
+  /accesses/{id}/test:
+    post:
+      parameters:
+      - description: Access id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Test access
+      tags:
+      - Access
+  /auth/api-keys:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List API keys
+      tags:
+      - APIKey
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: name/expiresAt
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Create API key
+      tags:
+      - APIKey
+  /auth/api-keys/{id}:
+    delete:
+      parameters:
+      - description: API key id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Revoke API key
+      tags:
+      - APIKey
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: email/password
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      summary: User login
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Current user
+      tags:
+      - Auth
+  /auth/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: new password
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Change user password
+      tags:
+      - Auth
+  /certificates:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List certificates
+      tags:
+      - Certificate
+  /certificates/{id}/download:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Certificate id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: format
+        in: body
+        name: body
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Download certificate
+      tags:
+      - Certificate
+  /certificates/{id}/revoke:
+    post:
+      parameters:
+      - description: Certificate id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Revoke certificate
+      tags:
+      - Certificate
+  /notifications/test:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: provider/accessId
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Test notification
+      tags:
+      - Notification
+  /open/certificates/apply:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: certificate apply request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.OpenApplyCertificateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Apply certificate via OpenAPI
+      tags:
+      - OpenAPI
+  /open/certificates/runs/{runId}:
+    get:
+      parameters:
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get OpenAPI certificate apply run
+      tags:
+      - OpenAPI
+  /open/certificates/runs/{runId}/events:
+    get:
+      parameters:
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      - description: Node id
+        in: query
+        name: nodeId
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: since
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List OpenAPI certificate apply run events
+      tags:
+      - OpenAPI
+  /statistics:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Dashboard statistics
+      tags:
+      - Statistics
+  /workflows:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List workflows
+      tags:
+      - Workflow
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: workflow
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Create or update workflow
+      tags:
+      - Workflow
+  /workflows/{id}:
+    delete:
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Delete workflow
+      tags:
+      - Workflow
+    get:
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Get workflow
+      tags:
+      - Workflow
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        type: string
+      - description: workflow
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Create or update workflow
+      tags:
+      - Workflow
+  /workflows/{id}/runs:
+    get:
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List workflow runs
+      tags:
+      - Workflow
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: trigger
+        in: body
+        name: body
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Start workflow run
+      tags:
+      - Workflow
+  /workflows/{id}/runs/{runId}/cancel:
+    post:
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Cancel workflow run
+      tags:
+      - Workflow
+  /workflows/{id}/runs/{runId}/events:
+    get:
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      - description: Node id
+        in: query
+        name: nodeId
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: since
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List workflow run events
+      tags:
+      - Workflow
+  /workflows/{id}/runs/{runId}/nodes:
+    get:
+      parameters:
+      - description: Workflow id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List workflow run nodes
+      tags:
+      - Workflow
+  /workflows/stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Workflow dispatcher stats
+      tags:
+      - Workflow
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BearerAuth:
+    description: 'Use format: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
