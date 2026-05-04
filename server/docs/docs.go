@@ -67,7 +67,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.Access"
                         }
                     }
                 ],
@@ -114,7 +114,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.Access"
                         }
                     }
                 ],
@@ -250,7 +250,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.CreateAPIKeyRequest"
                         }
                     }
                 ],
@@ -319,7 +319,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.LoginRequest"
                         }
                     }
                 ],
@@ -387,7 +387,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -461,7 +461,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.DownloadCertificateRequest"
                         }
                     }
                 ],
@@ -538,7 +538,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.TestNotificationRequest"
                         }
                     }
                 ],
@@ -674,6 +674,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/providers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Providers"
+                ],
+                "summary": "List provider definitions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "provider kind: access, dns, deploy",
+                        "name": "kind",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/statistics": {
             "get": {
                 "security": [
@@ -753,7 +788,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.Workflow"
                         }
                     }
                 ],
@@ -861,7 +896,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.Workflow"
                         }
                     }
                 ],
@@ -976,7 +1011,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/model.StartWorkflowRunRequest"
                         }
                     }
                 ],
@@ -1139,6 +1174,88 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.Access": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerUserId": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "reserve": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "model.CreateAPIKeyRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DownloadCertificateRequest": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "model.OpenApplyCertificateRequest": {
             "type": "object",
             "properties": {
@@ -1167,6 +1284,80 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.StartWorkflowRunRequest": {
+            "type": "object",
+            "properties": {
+                "trigger": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TestNotificationRequest": {
+            "type": "object",
+            "properties": {
+                "accessId": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Workflow": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "graphContent": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "graphDraft": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "hasContent": {
+                    "type": "boolean"
+                },
+                "hasDraft": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastRunId": {
+                    "type": "string"
+                },
+                "lastRunStatus": {
+                    "type": "string"
+                },
+                "lastRunTime": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerUserId": {
+                    "type": "string"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "triggerCron": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }

@@ -1,5 +1,59 @@
 basePath: /api
 definitions:
+  model.Access:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      createdAt:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      ownerUserId:
+        type: string
+      provider:
+        type: string
+      reserve:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.ChangePasswordRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
+  model.CreateAPIKeyRequest:
+    properties:
+      expiresAt:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  model.DownloadCertificateRequest:
+    properties:
+      format:
+        type: string
+    type: object
+  model.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
   model.OpenApplyCertificateRequest:
     properties:
       accessId:
@@ -19,6 +73,55 @@ definitions:
       keyAlgorithm:
         type: string
       provider:
+        type: string
+    type: object
+  model.StartWorkflowRunRequest:
+    properties:
+      trigger:
+        type: string
+    type: object
+  model.TestNotificationRequest:
+    properties:
+      accessId:
+        type: string
+      provider:
+        type: string
+    type: object
+  model.Workflow:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      graphContent:
+        additionalProperties: true
+        type: object
+      graphDraft:
+        additionalProperties: true
+        type: object
+      hasContent:
+        type: boolean
+      hasDraft:
+        type: boolean
+      id:
+        type: string
+      lastRunId:
+        type: string
+      lastRunStatus:
+        type: string
+      lastRunTime:
+        type: string
+      name:
+        type: string
+      ownerUserId:
+        type: string
+      trigger:
+        type: string
+      triggerCron:
+        type: string
+      updatedAt:
         type: string
     type: object
   util.Response:
@@ -64,7 +167,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.Access'
       produces:
       - application/json
       responses:
@@ -112,7 +215,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.Access'
       produces:
       - application/json
       responses:
@@ -171,7 +274,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.CreateAPIKeyRequest'
       produces:
       - application/json
       responses:
@@ -216,7 +319,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.LoginRequest'
       produces:
       - application/json
       responses:
@@ -252,7 +355,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.ChangePasswordRequest'
       produces:
       - application/json
       responses:
@@ -295,7 +398,7 @@ paths:
         in: body
         name: body
         schema:
-          type: object
+          $ref: '#/definitions/model.DownloadCertificateRequest'
       produces:
       - application/json
       responses:
@@ -340,7 +443,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.TestNotificationRequest'
       produces:
       - application/json
       responses:
@@ -429,6 +532,26 @@ paths:
       summary: List OpenAPI certificate apply run events
       tags:
       - OpenAPI
+  /providers:
+    get:
+      parameters:
+      - description: 'provider kind: access, dns, deploy'
+        in: query
+        name: kind
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List provider definitions
+      tags:
+      - Providers
   /statistics:
     get:
       produces:
@@ -468,7 +591,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.Workflow'
       produces:
       - application/json
       responses:
@@ -536,7 +659,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/model.Workflow'
       produces:
       - application/json
       responses:
@@ -584,7 +707,7 @@ paths:
         in: body
         name: body
         schema:
-          type: object
+          $ref: '#/definitions/model.StartWorkflowRunRequest'
       produces:
       - application/json
       responses:
