@@ -8,12 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/components/ui/toast";
 import type { User } from "@/types";
 
-function fmtTime(raw?: string) {
-  if (!raw) return "-";
-  const t = new Date(raw);
-  if (Number.isNaN(t.getTime())) return raw;
-  return t.toLocaleString();
-}
+import { formatTime } from "@/lib/time";
 
 export default function UsersPage() {
   const toast = useToast();
@@ -93,7 +88,7 @@ export default function UsersPage() {
                       {user.status === "active" ? t("common.enabled") : t("common.disabled")}
                     </Badge>
                   </TableCell>
-                  <TableCell>{fmtTime(user.createdAt)}</TableCell>
+                  <TableCell>{formatTime(user.createdAt)}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       size="sm"

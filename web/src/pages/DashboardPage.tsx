@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatTime } from "@/lib/time";
 
 function MetricCard({ title, value, hint }: { title: string; value: number; hint?: string }) {
   return (
@@ -74,7 +75,7 @@ export default function DashboardPage() {
                     <TableCell>
                       <StatusBadge status={w.lastRunStatus} />
                     </TableCell>
-                    <TableCell className="text-[#666]">{w.lastRunTime ? new Date(w.lastRunTime).toLocaleString() : "-"}</TableCell>
+                    <TableCell className="text-[#666]">{w.lastRunTime ? formatTime(w.lastRunTime) : "-"}</TableCell>
                   </TableRow>
                 ))
               ) : (

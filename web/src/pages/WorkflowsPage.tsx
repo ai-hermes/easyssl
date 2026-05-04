@@ -17,6 +17,7 @@ import { InlineEdit } from "@/components/ui/inline-edit";
 import { useToast } from "@/components/ui/toast";
 import { LogStream } from "@/components/log-stream";
 import type { Workflow, WorkflowRunNode } from "@/types";
+import { formatTime } from "@/lib/time";
 
 type FlowNodeData = {
   name: string;
@@ -310,13 +311,6 @@ function readSpecFromText(text: string): WorkflowSpec {
 
 function dumpSpec(spec: WorkflowSpec): string {
   return YAML.dump(spec, { lineWidth: 120, noRefs: true });
-}
-
-function formatDateTime(v?: string) {
-  if (!v) return "-";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleString();
 }
 
 function nodeStatusColor(status?: string) {
@@ -653,7 +647,7 @@ export default function WorkflowsPage() {
                       </span>
                     </td>
                     <td className="px-2 py-3"><StatusBadge status={w.lastRunStatus} /></td>
-                    <td className="px-2 py-3 text-[#666]">{formatDateTime(w.lastRunTime)}</td>
+                    <td className="px-2 py-3 text-[#666]">{formatTime(w.lastRunTime)}</td>
                     <td className="px-2 py-3 space-x-2 text-right">
                       <Button
                         size="sm"
@@ -732,8 +726,8 @@ export default function WorkflowsPage() {
                     >
                       <td className="px-2 py-3 font-mono text-xs">{run.id}</td>
                       <td className="px-2 py-3"><StatusBadge status={run.status} /></td>
-                      <td className="px-2 py-3 text-xs text-[#666]">{formatDateTime(run.startedAt)}</td>
-                      <td className="px-2 py-3 text-xs text-[#666]">{formatDateTime(run.endedAt)}</td>
+                      <td className="px-2 py-3 text-xs text-[#666]">{formatTime(run.startedAt)}</td>
+                      <td className="px-2 py-3 text-xs text-[#666]">{formatTime(run.endedAt)}</td>
                     </tr>
                   ))
                 ) : (
@@ -816,11 +810,11 @@ export default function WorkflowsPage() {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.startTime")}</div>
-                              <div className="mt-1 text-sm text-[#171717]">{formatDateTime(selectedNodeRun.startedAt)}</div>
+                              <div className="mt-1 text-sm text-[#171717]">{formatTime(selectedNodeRun.startedAt)}</div>
                             </div>
                             <div>
                               <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.endTime")}</div>
-                              <div className="mt-1 text-sm text-[#171717]">{formatDateTime(selectedNodeRun.endedAt)}</div>
+                              <div className="mt-1 text-sm text-[#171717]">{formatTime(selectedNodeRun.endedAt)}</div>
                             </div>
                           </div>
                           {selectedNodeRun.error ? (

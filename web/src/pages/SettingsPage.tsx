@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Copy, KeyRound, User } from "lucide-react";
+import { CalendarIcon, Copy, KeyRound, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import i18n from "@/i18n";
 import { api } from "@/api";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { APIKeyItem } from "@/types";
-
-
-function fmtTime(raw?: string) {
-  if (!raw) return "-";
-  const t = new Date(raw);
-  if (Number.isNaN(t.getTime())) return raw;
-  return t.toLocaleString();
-}
+import { cn } from "@/lib/utils";
+import { formatTime } from "@/lib/time";
 
 async function copyText(text: string) {
   if (navigator.clipboard?.writeText) {
@@ -177,13 +174,42 @@ export default function SettingsPage() {
               style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}
             >
               <div className="space-y-6">
-                <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+                <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
                   <Input
                     placeholder={t("settings.apiKey.namePlaceholder")}
                     value={apiKeyName}
                     onChange={(e) => setAPIKeyName(e.target.value)}
                   />
-                  <Input type="datetime-local" value={apiKeyExpiresAt} onChange={(e) => setAPIKeyExpiresAt(e.target.value)} />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[220px] justify-start text-left font-normal",
+                          !apiKeyExpiresAt && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {apiKeyExpiresAt ? format(new Date(apiKeyExpiresAt), "yyyy-MM-dd") : t("settings.apiKey.expiresAt")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={apiKeyExpiresAt ? new Date(apiKeyExpiresAt) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Set time to end of day (23:59:59)
+                            date.setHours(23, 59, 59, 0);
+                            setAPIKeyExpiresAt(date.toISOString().slice(0, 16));
+                          } else {
+                            setAPIKeyExpiresAt("");
+                          }
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <Button
                     disabled={creatingKey}
                     onClick={async () => {
@@ -257,9 +283,9 @@ export default function SettingsPage() {
                         <TableCell>
                           <Badge variant={item.status === "active" ? "secondary" : "destructive"}>{item.status}</Badge>
                         </TableCell>
-                        <TableCell>{fmtTime(item.expiresAt)}</TableCell>
-                        <TableCell>{fmtTime(item.lastUsedAt)}</TableCell>
-                        <TableCell>{fmtTime(item.createdAt)}</TableCell>
+                        <TableCell>{formatTime(item.expiresAt)}</TableCell>
+                        <TableCell>{formatTime(item.lastUsedAt)}</TableCell>
+                        <TableCell>{formatTime(item.createdAt)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
