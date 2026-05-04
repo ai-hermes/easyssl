@@ -157,8 +157,16 @@ jobs:
             EOF
             fi
 
-            # Export the target image
-            export EASYSSL_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
+            # Set target image and update docker-compose.yml in-place
+            EASYSSL_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
+            echo "Target image: $EASYSSL_IMAGE"
+
+            # Replace the api service image line (between container_name and depends_on)
+            sed -i '/container_name: easyssl-api/,/depends_on:/{s|image: .*|image: '"$EASYSSL_IMAGE"'|}' docker-compose.yml
+
+            echo "--- docker-compose.yml image config ---"
+            grep -n "image:" docker-compose.yml || true
+            echo "---------------------------------------"
 
             # Ensure Docker logout on exit so credentials are not left on disk
             trap 'docker logout >/dev/null 2>&1 || true' EXIT
@@ -176,8 +184,26 @@ jobs:
             # Login to registry
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-            # Pull new image and restart services
-            $COMPOSE pull api
+            # Pull new image with retry (handles transient network issues)
+            echo "Pulling image: $EASYSSL_IMAGE"
+            for attempt in 1 2 3; do
+              if $COMPOSE pull api; then
+                echo "✅ Image pulled successfully"
+                break
+              fi
+              echo "⚠️ Pull attempt $attempt/3 failed"
+              if [ "$attempt" -eq 3 ]; then
+                echo "❌ Image pull failed after 3 attempts"
+                echo "Hint: If Docker Hub is unreachable from your server, consider:"
+                echo "  1. Enabling Tencent Cloud mirror acceleration (see DEPLOY.md)"
+                echo "  2. Switching to Tencent Cloud TCR (see DEPLOY.md → 可选：使用腾讯云 TCR)"
+                exit 1
+              fi
+              echo "Retrying in 15s..."
+              sleep 15
+            done
+
+            # Restart services
             $COMPOSE up -d
 
             # Cleanup old dangling images and build cache
