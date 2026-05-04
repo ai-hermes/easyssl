@@ -510,8 +510,10 @@ func (r *Repository) ListWorkflowRunEventsForUser(ctx context.Context, runID, us
 }
 
 func (r *Repository) ListCertificatesForUser(ctx context.Context, userID, role string, limit int) ([]model.Certificate, error) {
-	query, extraArgs, argPos := scopedWhere(`SELECT id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at FROM certificates WHERE 1=1`, userID, role, 1)
-	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT $%d`, argPos)
+	// Deduplicate by workflow_id: only return the latest certificate per workflow
+	query, extraArgs, argPos := scopedWhere(`SELECT id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at FROM (SELECT DISTINCT ON (workflow_id) id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at FROM certificates WHERE 1=1`, userID, role, 1)
+	query += ` ORDER BY workflow_id, created_at DESC) t ORDER BY created_at DESC`
+	query += fmt.Sprintf(` LIMIT $%d`, argPos)
 	args := append(extraArgs, limit)
 
 	rows, err := r.db.Pool.Query(ctx, query, args...)
@@ -574,6 +576,10 @@ func (r *Repository) SaveCertificate(ctx context.Context, in model.Certificate) 
 		in.ID = uuid.NewString()
 		in.CreatedAt = now
 		in.UpdatedAt = now
+		// Delete old certificates for the same workflow to keep only the latest one
+		if in.WorkflowID != "" {
+			_, _ = r.db.Pool.Exec(ctx, `DELETE FROM certificates WHERE workflow_id=$1 AND is_revoked=false`, in.WorkflowID)
+		}
 		_, err := r.db.Pool.Exec(ctx, `INSERT INTO certificates(id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`, in.ID, in.OwnerUserID, in.Source, in.SubjectAltNames, in.SerialNumber, in.Certificate, in.PrivateKey, in.IssuerOrg, in.KeyAlgorithm, in.ValidityNotAfter, in.IsRevoked, in.WorkflowID, in.WorkflowRunID, now, now)
 		if err != nil {
 			return nil, err

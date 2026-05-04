@@ -465,7 +465,7 @@ func (h *Handler) TestAccess(c *gin.Context) {
 		util.Err(c, 500, err.Error())
 		return
 	}
-	util.OK(c, gin.H{"testedAt": time.Now()})
+	util.OK(c, gin.H{"testedAt": time.Now().Format("2006-01-02 15:04:05")})
 }
 
 // ListWorkflows godoc
@@ -842,7 +842,7 @@ func (h *Handler) TestNotification(c *gin.Context) {
 		util.Err(c, 500, err.Error())
 		return
 	}
-	util.OK(c, gin.H{"sentAt": time.Now()})
+	util.OK(c, gin.H{"sentAt": time.Now().Format("2006-01-02 15:04:05")})
 }
 
 // ListUsers godoc
