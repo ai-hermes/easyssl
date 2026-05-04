@@ -12,6 +12,8 @@ on:
         default: ''
 
 env:
+  REGISTRY: ccr.ccs.tencentyun.com
+  NAMESPACE: ai-hermes
   IMAGE_NAME: easyssl
 
 concurrency:
@@ -35,9 +37,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Container Registry
+      - name: Login to Tencent Cloud CCR
         uses: docker/login-action@v3
         with:
+          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -60,8 +63,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -90,7 +93,6 @@ jobs:
           host: ${{ secrets.TENCENT_CLOUD_HOST }}
           username: ${{ secrets.TENCENT_CLOUD_USER }}
           key: ${{ steps.ssh-key.outputs.key }}
-          script_stop: true
           command_timeout: 10m
           script: |
             set -euo pipefail
@@ -158,7 +160,7 @@ jobs:
             fi
 
             # Set target image and update docker-compose.yml in-place
-            EASYSSL_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
+            EASYSSL_IMAGE="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
             echo "Target image: $EASYSSL_IMAGE"
 
             # Replace the api service image line (between container_name and depends_on)
@@ -181,8 +183,8 @@ jobs:
               exit 1
             fi
 
-            # Login to registry
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            # Login to Tencent Cloud CCR
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login ${{ env.REGISTRY }} -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
             # Pull new image with retry (handles transient network issues)
             echo "Pulling image: $EASYSSL_IMAGE"
@@ -194,9 +196,7 @@ jobs:
               echo "⚠️ Pull attempt $attempt/3 failed"
               if [ "$attempt" -eq 3 ]; then
                 echo "❌ Image pull failed after 3 attempts"
-                echo "Hint: If Docker Hub is unreachable from your server, consider:"
-                echo "  1. Enabling Tencent Cloud mirror acceleration (see DEPLOY.md)"
-                echo "  2. Switching to Tencent Cloud TCR (see DEPLOY.md → 可选：使用腾讯云 TCR)"
+                echo "Hint: Check CCR credentials and ensure the instance 'ccr.ccs.tencentyun.com' is accessible from your server."
                 exit 1
               fi
               echo "Retrying in 15s..."
