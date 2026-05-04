@@ -1,5 +1,28 @@
 export type ApiResp<T> = { code: number; msg: string; data: T };
 
+
+export type ProviderField = {
+  name: string;
+  label: string;
+  type: "text" | "password" | "number" | "checkbox" | "textarea" | "select";
+  required: boolean;
+  secret: boolean;
+  default?: unknown;
+  options?: Array<{ value: string; label: string }>;
+  placeholder?: string;
+};
+
+export type ProviderDefinition = {
+  id: string;
+  label: string;
+  kind: "access" | "dns" | "deploy";
+  accessProviderId: string;
+  capabilities?: string[];
+  aliases?: string[];
+  accessFields: ProviderField[];
+  deployFields?: ProviderField[];
+};
+
 export type Access = {
   id?: string;
   name: string;
