@@ -617,7 +617,7 @@ export default function WorkflowsPage() {
 
       <Card>
         <CardHeader className="pb-2">
-          <div className="text-base font-semibold tracking-[-0.02em]">Workflows</div>
+          <div className="text-base font-semibold tracking-[-0.02em]">{t("workflows.title")}</div>
           <div className="text-xs text-[#666]">{t("workflows.listDescription")}</div>
         </CardHeader>
 
@@ -801,7 +801,7 @@ export default function WorkflowsPage() {
                         <div className="space-y-4">
                           <div className="grid grid-cols-3 gap-4">
                             <div>
-                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">Node ID</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.nodeId")}</div>
                               <div className="mt-1 font-mono text-sm text-[#171717]">{selectedNodeRun.nodeId}</div>
                             </div>
                             <div>
@@ -809,7 +809,7 @@ export default function WorkflowsPage() {
                               <div className="mt-1"><StatusBadge status={selectedNodeRun.status} /></div>
                             </div>
                             <div>
-                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">Provider</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.provider")}</div>
                               <div className="mt-1 font-mono text-sm text-[#171717]">{selectedNodeRun.provider || "-"}</div>
                             </div>
                           </div>

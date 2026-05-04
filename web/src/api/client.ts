@@ -13,6 +13,15 @@ export function setToken(token: string) {
 
 export function clearToken() {
   localStorage.removeItem("easyssl_token");
+  localStorage.removeItem("easyssl_role");
+}
+
+export function getRole() {
+  return localStorage.getItem("easyssl_role") || "";
+}
+
+export function setRole(role: string) {
+  localStorage.setItem("easyssl_role", role);
 }
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {

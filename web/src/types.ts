@@ -100,3 +100,11 @@ export type APIKeyItem = {
   lastUsedAt?: string;
   createdAt: string;
 };
+
+export type User = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+};

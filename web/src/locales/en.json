@@ -1,17 +1,17 @@
 {
   "layout": {
     "brand": "EasySSL",
-    "tagline": "Workflow SSL",
+    "tagline": "Agentic",
     "nav": {
       "dashboard": "Dashboard",
       "accesses": "Accesses",
       "workflows": "Workflows",
       "certificates": "Certificates",
       "settings": "Settings",
-      "docs": "Docs"
+      "docs": "Docs",
+      "users": "Users"
     },
-    "logout": "Logout",
-    "subtitle": "Clear configuration, real-time execution feedback, observable node status."
+    "logout": "Logout"
   },
   "login": {
     "title": "Login",
@@ -19,7 +19,41 @@
     "password": "Password",
     "submit": "Login",
     "error": "Invalid email or password",
-    "description": "Sign in with your admin account to access the certificate automation console."
+    "description": "Sign in to access the certificate automation console.",
+    "register": "Register",
+    "noAccount": "Don't have an account?"
+  },
+  "register": {
+    "title": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "submit": "Register",
+    "description": "Create a new account to use EasySSL.",
+    "passwordMismatch": "Passwords do not match",
+    "passwordMin": "Password must be at least 8 characters",
+    "success": "Registration successful, please log in",
+    "login": "Go to Login",
+    "hasAccount": "Already have an account?"
+  },
+  "users": {
+    "title": "User Management",
+    "description": "Manage system users. You can enable or disable regular user accounts.",
+    "loadFailed": "Failed to load users",
+    "updateSuccess": "Status updated",
+    "updateFailed": "Failed to update status",
+    "noUsers": "No users",
+    "role": {
+      "admin": "Admin",
+      "user": "User"
+    },
+    "columns": {
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    }
   },
   "common": {
     "loading": "Loading…",
@@ -75,6 +109,7 @@
   "accesses": {
     "title": "Access Management",
     "description": "Manage DNS, cloud, host, and panel credentials for certificate application or deployment.",
+    "listDescription": "Provider credentials are stored server-side. Secret fields are masked after save.",
     "addAccess": "Add Access",
     "saveSuccess": "Access saved successfully",
     "testSuccess": "Access test passed",
@@ -85,7 +120,13 @@
     "dialogDescription": "Configure for certificate application or deployment nodes. Provider forms are auto-generated from backend metadata.",
     "namePlaceholder": "Access Name",
     "leaveBlankHint": " (Leave blank to keep unchanged)",
-    "create": "Create Access"
+    "create": "Create Access",
+    "columns": {
+      "name": "Name",
+      "provider": "Provider",
+      "config": "Config",
+      "actions": "Actions"
+    }
   },
   "workflows": {
     "templates": {
@@ -103,6 +144,9 @@
     "triggerFailed": "Failed to trigger run",
     "addWorkflow": "Add Workflow",
     "listDescription": "Workflow list display by default.",
+    "title": "Workflows",
+    "nodeId": "Node ID",
+    "provider": "Provider",
     "columns": {
       "name": "Name",
       "status": "Status",
@@ -181,6 +225,11 @@
   },
   "settings": {
     "title": "Settings",
+    "nav": {
+      "profile": "Profile",
+      "openapi": "OpenAPI",
+      "docs": "API Docs"
+    },
     "account": {
       "title": "Account Settings",
       "desc": "Password changes take effect on next login.",

@@ -40,3 +40,4 @@ web/.agents/
 .tmp/
 certimate
 *.tsbuildinfo
+server/api

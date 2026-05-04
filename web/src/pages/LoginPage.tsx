@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
-import { setToken } from "@/api/client";
+import { setToken, setRole } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 export default function LoginPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [email, setEmail] = useState("admin@easyssl.local");
-  const [password, setPassword] = useState("1234567890");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -19,6 +19,7 @@ export default function LoginPage() {
     try {
       const resp = await api.login(email, password);
       setToken(resp.token);
+      setRole(resp.user.role);
       navigate("/");
     } catch (err) {
       setError((err as Error).message);
@@ -40,6 +41,12 @@ export default function LoginPage() {
             {error && <p className="rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{error}</p>}
             <Button className="w-full" type="submit">{t("login.submit")}</Button>
           </form>
+          <div className="mt-4 text-center text-sm text-[#666]">
+            {t("login.noAccount")}{" "}
+            <Link to="/register" className="text-[#171717] underline underline-offset-2 hover:text-[#555]">
+              {t("login.register")}
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/accesses": {
+        "/api/accesses": {
             "get": {
                 "security": [
                     {
@@ -25,6 +25,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List all access credentials configured by the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -50,6 +51,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Create a new access credential or update an existing one.",
                 "consumes": [
                     "application/json"
                 ],
@@ -81,7 +83,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/accesses/{id}": {
+        "/api/accesses/{id}": {
             "put": {
                 "security": [
                     {
@@ -91,6 +93,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Create a new access credential or update an existing one.",
                 "consumes": [
                     "application/json"
                 ],
@@ -136,6 +139,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Soft delete an access credential.",
                 "produces": [
                     "application/json"
                 ],
@@ -162,7 +166,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/accesses/{id}/test": {
+        "/api/accesses/{id}/test": {
             "post": {
                 "security": [
                     {
@@ -172,6 +176,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Test the connectivity and validity of an access credential.",
                 "produces": [
                     "application/json"
                 ],
@@ -198,7 +203,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/api-keys": {
+        "/api/admin/users": {
             "get": {
                 "security": [
                     {
@@ -208,6 +213,87 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List all registered users. Requires admin role.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "List all users (admin only)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/users/{id}/status": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Enable or disable a user account. Requires admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update user status (admin only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "{status}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/api-keys": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all API keys created by the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -233,6 +319,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Create a new API key for programmatic access via X-API-Key header.",
                 "consumes": [
                     "application/json"
                 ],
@@ -264,7 +351,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/api-keys/{id}": {
+        "/api/auth/api-keys/{id}": {
             "delete": {
                 "security": [
                     {
@@ -274,6 +361,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Revoke an existing API key to disable its access.",
                 "produces": [
                     "application/json"
                 ],
@@ -300,8 +388,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/api/auth/login": {
             "post": {
+                "description": "Authenticate with email and password to obtain a JWT token.",
                 "consumes": [
                     "application/json"
                 ],
@@ -333,7 +422,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/me": {
+        "/api/auth/me": {
             "get": {
                 "security": [
                     {
@@ -343,6 +432,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Get the current authenticated user's profile information.",
                 "produces": [
                     "application/json"
                 ],
@@ -360,7 +450,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/password": {
+        "/api/auth/password": {
             "put": {
                 "security": [
                     {
@@ -370,6 +460,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Update the password for the current user. Takes effect on next login.",
                 "consumes": [
                     "application/json"
                 ],
@@ -401,7 +492,41 @@ const docTemplate = `{
                 }
             }
         },
-        "/certificates": {
+        "/api/auth/register": {
+            "post": {
+                "description": "Register a new user account with email and password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "email/password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/certificates": {
             "get": {
                 "security": [
                     {
@@ -411,6 +536,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List all certificates managed by the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -428,7 +554,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/certificates/{id}/download": {
+        "/api/certificates/{id}/download": {
             "post": {
                 "security": [
                     {
@@ -438,6 +564,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Download a certificate in the specified format (PEM, PFX, JKS).",
                 "consumes": [
                     "application/json"
                 ],
@@ -475,7 +602,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/certificates/{id}/revoke": {
+        "/api/certificates/{id}/revoke": {
             "post": {
                 "security": [
                     {
@@ -485,6 +612,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Revoke a certificate to mark it as invalid.",
                 "produces": [
                     "application/json"
                 ],
@@ -511,7 +639,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/notifications/test": {
+        "/api/notifications/test": {
             "post": {
                 "security": [
                     {
@@ -521,6 +649,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Send a test notification using the specified provider and access.",
                 "consumes": [
                     "application/json"
                 ],
@@ -552,129 +681,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/open/certificates/apply": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OpenAPI"
-                ],
-                "summary": "Apply certificate via OpenAPI",
-                "parameters": [
-                    {
-                        "description": "certificate apply request",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.OpenApplyCertificateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/util.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/open/certificates/runs/{runId}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OpenAPI"
-                ],
-                "summary": "Get OpenAPI certificate apply run",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Run id",
-                        "name": "runId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/util.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/open/certificates/runs/{runId}/events": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OpenAPI"
-                ],
-                "summary": "List OpenAPI certificate apply run events",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Run id",
-                        "name": "runId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Node id",
-                        "name": "nodeId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "RFC3339 timestamp",
-                        "name": "since",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/util.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/providers": {
+        "/api/providers": {
             "get": {
                 "security": [
                     {
@@ -684,6 +691,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List all available provider definitions for DNS, access, and deploy operations.",
                 "produces": [
                     "application/json"
                 ],
@@ -709,7 +717,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/statistics": {
+        "/api/statistics": {
             "get": {
                 "security": [
                     {
@@ -719,6 +727,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Get dashboard statistics including certificate and workflow counts.",
                 "produces": [
                     "application/json"
                 ],
@@ -736,7 +745,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows": {
+        "/api/workflows": {
             "get": {
                 "security": [
                     {
@@ -746,6 +755,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List all workflows owned by the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -771,6 +781,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Create a new workflow or update an existing workflow definition.",
                 "consumes": [
                     "application/json"
                 ],
@@ -802,7 +813,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows/stats": {
+        "/api/workflows/stats": {
             "get": {
                 "security": [
                     {
@@ -812,6 +823,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Get real-time workflow dispatcher statistics including concurrency and queue status.",
                 "produces": [
                     "application/json"
                 ],
@@ -829,7 +841,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows/{id}": {
+        "/api/workflows/{id}": {
             "get": {
                 "security": [
                     {
@@ -839,6 +851,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Get detailed information of a specific workflow.",
                 "produces": [
                     "application/json"
                 ],
@@ -873,6 +886,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Create a new workflow or update an existing workflow definition.",
                 "consumes": [
                     "application/json"
                 ],
@@ -918,6 +932,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Delete a workflow and all its associated data.",
                 "produces": [
                     "application/json"
                 ],
@@ -944,7 +959,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows/{id}/runs": {
+        "/api/workflows/{id}/runs": {
             "get": {
                 "security": [
                     {
@@ -954,6 +969,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List execution runs for a specific workflow.",
                 "produces": [
                     "application/json"
                 ],
@@ -988,6 +1004,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Manually trigger a workflow execution.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1025,7 +1042,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows/{id}/runs/{runId}/cancel": {
+        "/api/workflows/{id}/runs/{runId}/cancel": {
             "post": {
                 "security": [
                     {
@@ -1035,6 +1052,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Cancel a running or pending workflow execution.",
                 "produces": [
                     "application/json"
                 ],
@@ -1068,7 +1086,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows/{id}/runs/{runId}/events": {
+        "/api/workflows/{id}/runs/{runId}/events": {
             "get": {
                 "security": [
                     {
@@ -1078,6 +1096,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List event logs for a workflow run, optionally filtered by node.",
                 "produces": [
                     "application/json"
                 ],
@@ -1129,7 +1148,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/workflows/{id}/runs/{runId}/nodes": {
+        "/api/workflows/{id}/runs/{runId}/nodes": {
             "get": {
                 "security": [
                     {
@@ -1139,6 +1158,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "List all node execution records for a workflow run.",
                 "produces": [
                     "application/json"
                 ],
@@ -1171,6 +1191,131 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/openapi/certificates/apply": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Apply for an SSL certificate using the OpenAPI endpoint with API key authentication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OpenAPI"
+                ],
+                "summary": "Apply certificate via OpenAPI",
+                "parameters": [
+                    {
+                        "description": "certificate apply request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.OpenApplyCertificateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/openapi/certificates/runs/{runId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the status and result of a certificate apply run triggered via OpenAPI.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OpenAPI"
+                ],
+                "summary": "Get OpenAPI certificate apply run",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Run id",
+                        "name": "runId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/openapi/certificates/runs/{runId}/events": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List execution events for a certificate apply run.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OpenAPI"
+                ],
+                "summary": "List OpenAPI certificate apply run events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Run id",
+                        "name": "runId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node id",
+                        "name": "nodeId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1179,12 +1324,7 @@ const docTemplate = `{
             "properties": {
                 "config": {
                     "type": "object",
-                    "description": "Provider-specific configuration. Fields depend on the selected provider. Call GET /providers?kind=access to see available fields for each provider.",
-                    "additionalProperties": true,
-                    "example": {
-                        "accessKeyId": "your-access-key-id",
-                        "accessKeySecret": "your-access-key-secret"
-                    }
+                    "additionalProperties": true
                 },
                 "createdAt": {
                     "type": "string"
@@ -1290,6 +1430,22 @@ const docTemplate = `{
                 },
                 "provider": {
                     "type": "string"
+                }
+            }
+        },
+        "model.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
                 }
             }
         },
@@ -1399,7 +1555,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
-	BasePath:         "/api",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "EasySSL API",
 	Description:      "EasySSL service APIs.\n1) Call POST /api/auth/login to get JWT token.\n2) Call POST /api/auth/api-keys to generate API key token (shown once).\n3) Call OpenAPI certificate apply endpoints with `X-API-Key: <token>`.\n4) Other business APIs support `Authorization: Bearer <token>` or `X-API-Key: <token>`.",

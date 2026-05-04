@@ -197,17 +197,17 @@ export default function AccessesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Accesses</CardTitle>
-          <CardDescription>Provider credentials are stored server-side. Secret fields are masked after save.</CardDescription>
+          <CardTitle>{t("accesses.title")}</CardTitle>
+          <CardDescription>{t("accesses.listDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-[#777]">
               <tr>
-                <th className="px-2 pb-3 pt-1">Name</th>
-                <th className="px-2 pb-3 pt-1">Provider</th>
-                <th className="px-2 pb-3 pt-1">Config</th>
-                <th className="px-2 pb-3 pt-1 text-right">Actions</th>
+                <th className="px-2 pb-3 pt-1">{t("accesses.columns.name")}</th>
+                <th className="px-2 pb-3 pt-1">{t("accesses.columns.provider")}</th>
+                <th className="px-2 pb-3 pt-1">{t("accesses.columns.config")}</th>
+                <th className="px-2 pb-3 pt-1 text-right">{t("accesses.columns.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eee]">

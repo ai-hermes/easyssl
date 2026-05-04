@@ -18,7 +18,7 @@ func (a AuthContext) IsAdmin() bool {
 	return a.Role == RoleAdmin
 }
 
-type Admin struct {
+type User struct {
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`
 	Role         string    `json:"role"`
@@ -154,6 +154,11 @@ type OpenApplyCertificateRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type RegisterRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 
 type ChangePasswordRequest struct {

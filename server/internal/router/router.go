@@ -26,7 +26,7 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	}
 	dispatcher := workflow.NewDispatcher(repo, 2)
 	svc := service.New(repo, cfg.JWTSecret, dispatcher)
-	_ = svc.EnsureBootstrapAdmin(context.Background(), "admin@easyssl.local", "1234567890")
+	_ = svc.EnsureBootstrapUser(context.Background(), "admin@easyssl.local", "1234567890")
 	h := handler.New(svc)
 
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
@@ -36,6 +36,7 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 
 	auth := r.Group("/api/auth")
 	auth.POST("/login", h.Login)
+	auth.POST("/register", h.Register)
 
 	api := r.Group("/api")
 	api.Use(middleware.RequireAuth(cfg.JWTSecret, svc))
@@ -44,6 +45,9 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	api.POST("/auth/api-keys", h.CreateAPIKey)
 	api.GET("/auth/api-keys", h.ListAPIKeys)
 	api.DELETE("/auth/api-keys/:id", h.RevokeAPIKey)
+
+	api.GET("/admin/users", h.ListUsers)
+	api.PUT("/admin/users/:id/status", h.UpdateUserStatus)
 
 	api.GET("/providers", h.ListProviders)
 
@@ -72,7 +76,7 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	api.GET("/statistics", h.Statistics)
 	api.POST("/notifications/test", h.TestNotification)
 
-	open := r.Group("/api/open")
+	open := r.Group("/openapi")
 	open.Use(middleware.RequireAPIKeyAuth(svc))
 	open.POST("/certificates/apply", h.OpenApplyCertificate)
 	open.GET("/certificates/runs/:runId", h.GetOpenCertificateRun)

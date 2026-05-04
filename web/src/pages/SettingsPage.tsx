@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { Copy } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, KeyRound, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { api } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import type { APIKeyItem } from "@/types";
+
 
 function fmtTime(raw?: string) {
   if (!raw) return "-";
@@ -24,7 +24,6 @@ async function copyText(text: string) {
     await navigator.clipboard.writeText(text);
     return;
   }
-
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.setAttribute("readonly", "");
@@ -34,7 +33,6 @@ async function copyText(text: string) {
   document.body.appendChild(textarea);
   textarea.focus();
   textarea.select();
-
   try {
     const ok = document.execCommand("copy");
     if (!ok) throw new Error(i18n.t("common.copyFailed"));
@@ -46,6 +44,8 @@ async function copyText(text: string) {
 export default function SettingsPage() {
   const toast = useToast();
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<"profile" | "openapi">("profile");
+
   const [password, setPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -55,7 +55,6 @@ export default function SettingsPage() {
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
-
 
   async function loadAPIKeys() {
     setLoadingKeys(true);
@@ -74,156 +73,229 @@ export default function SettingsPage() {
     void loadAPIKeys();
   }, []);
 
+  const navItems: { key: "profile" | "openapi"; label: string; icon: React.ReactNode }[] = [
+    { key: "profile", label: t("settings.nav.profile"), icon: <User size={16} /> },
+    { key: "openapi", label: t("settings.nav.openapi"), icon: <KeyRound size={16} /> },
+  ];
+
   return (
-    <div className="space-y-6">
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle>{t("settings.account.title")}</CardTitle>
-          <CardDescription>{t("settings.account.desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Input type="password" placeholder={t("settings.account.newPassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
-          <Button
-            onClick={async () => {
-              try {
-                await api.changePassword(password);
-                setPasswordMsg({ type: "success", text: t("settings.account.success") });
-                setPassword("");
-                toast.success(t("settings.account.success"));
-              } catch (e) {
-                const errMsg = e instanceof Error ? e.message : t("settings.account.error");
-                setPasswordMsg({ type: "error", text: errMsg });
-                toast.error(errMsg);
-              }
-            }}
-          >
-            {t("settings.account.update")}
-          </Button>
-          {passwordMsg ? (
-            <p
-              className={`rounded-md px-3 py-2 text-sm ${
-                passwordMsg.type === "success" ? "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]" : "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]"
-              }`}
-            >
-              {passwordMsg.text}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+    <div className="grid gap-8 md:grid-cols-[240px_1fr]">
+      {/* Left Sidebar */}
+      <div
+        className="h-fit rounded-lg bg-white p-2"
+        style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}
+      >
+        <nav className="flex flex-col gap-1">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition ${
+                  isActive
+                    ? "bg-white font-medium text-[#171717] shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]"
+                    : "text-[#666] hover:bg-[#fafafa] hover:text-[#171717]"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.apiKey.title")}</CardTitle>
-          <CardDescription>{t("settings.apiKey.desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-            <Input placeholder={t("settings.apiKey.namePlaceholder")} value={apiKeyName} onChange={(e) => setAPIKeyName(e.target.value)} />
-            <Input type="datetime-local" value={apiKeyExpiresAt} onChange={(e) => setAPIKeyExpiresAt(e.target.value)} />
-            <Button
-              disabled={creatingKey}
-              onClick={async () => {
-                const name = apiKeyName.trim();
-                if (!name) {
-                  toast.error(t("settings.apiKey.enterName"));
-                  return;
-                }
-                setCreatingKey(true);
-                try {
-                  const expiresAt = apiKeyExpiresAt ? new Date(apiKeyExpiresAt).toISOString() : undefined;
-                  const res = await api.createAPIKey({ name, expiresAt });
-                  setRevealedToken(res.token);
-                  setAPIKeyName("");
-                  setAPIKeyExpiresAt("");
-                  toast.success(t("settings.apiKey.createSuccess"));
-                  await loadAPIKeys();
-                } catch (e) {
-                  const msg = e instanceof Error ? e.message : t("settings.apiKey.createFailed");
-                  toast.error(msg);
-                } finally {
-                  setCreatingKey(false);
-                }
-              }}
-            >
-              {t("settings.apiKey.create")}
-            </Button>
-          </div>
+      {/* Right Content */}
+      <div className="min-w-0 space-y-6">
+        {activeTab === "profile" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#171717]">
+                {t("settings.account.title")}
+              </h2>
+              <p className="mt-1 text-sm text-[#666]">{t("settings.account.desc")}</p>
+            </div>
 
-          {revealedToken ? (
-            <div className="space-y-2 rounded-md bg-[#f8fbff] p-3 shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              <div className="text-sm font-medium text-[#171717]">{t("settings.apiKey.newToken")}</div>
-              <div className="flex flex-col gap-2 md:flex-row">
-                <Input readOnly value={revealedToken} />
+            <div
+              className="rounded-lg bg-white p-6"
+              style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[#171717]">{t("settings.account.newPassword")}</label>
+                  <Input
+                    type="password"
+                    placeholder={t("settings.account.newPassword")}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
                 <Button
-                  variant="outline"
                   onClick={async () => {
-                    await copyText(revealedToken);
-                    toast.success(t("settings.apiKey.copySuccess"));
+                    try {
+                      await api.changePassword(password);
+                      setPasswordMsg({ type: "success", text: t("settings.account.success") });
+                      setPassword("");
+                      toast.success(t("settings.account.success"));
+                    } catch (e) {
+                      const errMsg = e instanceof Error ? e.message : t("settings.account.error");
+                      setPasswordMsg({ type: "error", text: errMsg });
+                      toast.error(errMsg);
+                    }
                   }}
                 >
-                  {t("common.copy")}
+                  {t("settings.account.update")}
                 </Button>
+                {passwordMsg ? (
+                  <p
+                    className={`rounded-md px-3 py-2 text-sm ${
+                      passwordMsg.type === "success"
+                        ? "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]"
+                        : "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]"
+                    }`}
+                  >
+                    {passwordMsg.text}
+                  </p>
+                ) : null}
               </div>
             </div>
-          ) : null}
+          </div>
+        )}
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("settings.apiKey.columns.name")}</TableHead>
-                <TableHead>{t("settings.apiKey.columns.prefix")}</TableHead>
-                <TableHead>{t("settings.apiKey.columns.status")}</TableHead>
-                <TableHead>{t("settings.apiKey.columns.expiresAt")}</TableHead>
-                <TableHead>{t("settings.apiKey.columns.lastUsed")}</TableHead>
-                <TableHead>{t("settings.apiKey.columns.createdAt")}</TableHead>
-                <TableHead className="text-right">{t("settings.apiKey.columns.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apiKeys.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell className="font-mono text-xs">{item.prefix}</TableCell>
-                  <TableCell>
-                    <Badge variant={item.status === "active" ? "secondary" : "destructive"}>{item.status}</Badge>
-                  </TableCell>
-                  <TableCell>{fmtTime(item.expiresAt)}</TableCell>
-                  <TableCell>{fmtTime(item.lastUsedAt)}</TableCell>
-                  <TableCell>{fmtTime(item.createdAt)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={item.status !== "active"}
-                      onClick={async () => {
-                        try {
-                          await api.revokeAPIKey(item.id);
-                          toast.success(t("settings.apiKey.revoked"));
-                          await loadAPIKeys();
-                        } catch (e) {
-                          const msg = e instanceof Error ? e.message : t("settings.apiKey.revokeFailed");
-                          toast.error(msg);
-                        }
-                      }}
-                    >
-                      {t("settings.apiKey.revoke")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {apiKeys.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-sm text-[#666]">
-                    {loadingKeys ? t("common.loading") : t("settings.apiKey.noKeys")}
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
+        {activeTab === "openapi" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#171717]">
+                {t("settings.apiKey.title")}
+              </h2>
+              <p className="mt-1 text-sm text-[#666]">{t("settings.apiKey.desc")}</p>
+            </div>
 
+            <div
+              className="rounded-lg bg-white p-6"
+              style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}
+            >
+              <div className="space-y-6">
+                <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+                  <Input
+                    placeholder={t("settings.apiKey.namePlaceholder")}
+                    value={apiKeyName}
+                    onChange={(e) => setAPIKeyName(e.target.value)}
+                  />
+                  <Input type="datetime-local" value={apiKeyExpiresAt} onChange={(e) => setAPIKeyExpiresAt(e.target.value)} />
+                  <Button
+                    disabled={creatingKey}
+                    onClick={async () => {
+                      const name = apiKeyName.trim();
+                      if (!name) {
+                        toast.error(t("settings.apiKey.enterName"));
+                        return;
+                      }
+                      setCreatingKey(true);
+                      try {
+                        const expiresAt = apiKeyExpiresAt ? new Date(apiKeyExpiresAt).toISOString() : undefined;
+                        const res = await api.createAPIKey({ name, expiresAt });
+                        setRevealedToken(res.token);
+                        setAPIKeyName("");
+                        setAPIKeyExpiresAt("");
+                        toast.success(t("settings.apiKey.createSuccess"));
+                        await loadAPIKeys();
+                      } catch (e) {
+                        const msg = e instanceof Error ? e.message : t("settings.apiKey.createFailed");
+                        toast.error(msg);
+                      } finally {
+                        setCreatingKey(false);
+                      }
+                    }}
+                  >
+                    {t("settings.apiKey.create")}
+                  </Button>
+                </div>
 
-        </CardContent>
-      </Card>
+                {revealedToken ? (
+                  <div
+                    className="space-y-2 rounded-md bg-[#f8fbff] p-3"
+                    style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}
+                  >
+                    <div className="text-sm font-medium text-[#171717]">{t("settings.apiKey.newToken")}</div>
+                    <div className="flex flex-col gap-2 md:flex-row">
+                      <Input readOnly value={revealedToken} />
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          await copyText(revealedToken);
+                          toast.success(t("settings.apiKey.copySuccess"));
+                        }}
+                      >
+                        <Copy size={14} className="mr-1" />
+                        {t("common.copy")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <Separator style={{ backgroundColor: "#ebebeb" }} />
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("settings.apiKey.columns.name")}</TableHead>
+                      <TableHead>{t("settings.apiKey.columns.prefix")}</TableHead>
+                      <TableHead>{t("settings.apiKey.columns.status")}</TableHead>
+                      <TableHead>{t("settings.apiKey.columns.expiresAt")}</TableHead>
+                      <TableHead>{t("settings.apiKey.columns.lastUsed")}</TableHead>
+                      <TableHead>{t("settings.apiKey.columns.createdAt")}</TableHead>
+                      <TableHead className="text-right">{t("settings.apiKey.columns.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {apiKeys.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="font-mono text-xs">{item.prefix}</TableCell>
+                        <TableCell>
+                          <Badge variant={item.status === "active" ? "secondary" : "destructive"}>{item.status}</Badge>
+                        </TableCell>
+                        <TableCell>{fmtTime(item.expiresAt)}</TableCell>
+                        <TableCell>{fmtTime(item.lastUsedAt)}</TableCell>
+                        <TableCell>{fmtTime(item.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={item.status !== "active"}
+                            onClick={async () => {
+                              try {
+                                await api.revokeAPIKey(item.id);
+                                toast.success(t("settings.apiKey.revoked"));
+                                await loadAPIKeys();
+                              } catch (e) {
+                                const msg = e instanceof Error ? e.message : t("settings.apiKey.revokeFailed");
+                                toast.error(msg);
+                              }
+                            }}
+                          >
+                            {t("settings.apiKey.revoke")}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {apiKeys.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-6 text-center text-sm text-[#666]">
+                          {loadingKeys ? t("common.loading") : t("settings.apiKey.noKeys")}
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }

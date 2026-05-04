@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { clearToken } from "@/api/client";
+import { clearToken, getRole } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -9,11 +9,13 @@ export default function Layout() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
 
+  const isAdmin = getRole() === "admin";
   const items = [
     ["/", t("layout.nav.dashboard")],
     ["/accesses", t("layout.nav.accesses")],
     ["/workflows", t("layout.nav.workflows")],
     ["/certificates", t("layout.nav.certificates")],
+    ...(isAdmin ? [["/users", t("layout.nav.users")] as [string, string]] : []),
     ["/settings", t("layout.nav.settings")],
     ["/docs", t("layout.nav.docs")],
   ] as [string, string][];
@@ -67,7 +69,6 @@ export default function Layout() {
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-[#171717]">{title}</h1>
-            <p className="text-sm text-[#666]">{t("layout.subtitle")}</p>
           </div>
         </div>
         <Outlet />
