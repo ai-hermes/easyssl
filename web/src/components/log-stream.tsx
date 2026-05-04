@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 type LogLevel = "success" | "error" | "warning" | "info" | "neutral";
@@ -47,7 +48,9 @@ export interface LogStreamProps {
 }
 
 export const LogStream = React.forwardRef<HTMLDivElement, LogStreamProps>(
-  ({ items, className, emptyText = "暂无日志", loading = false }, ref) => {
+  ({ items, className, emptyText, loading = false }, ref) => {
+    const { t } = useTranslation();
+    const displayEmpty = emptyText ?? t("logs.empty");
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const bottomRef = React.useRef<HTMLDivElement>(null);
 
@@ -62,7 +65,7 @@ export const LogStream = React.forwardRef<HTMLDivElement, LogStreamProps>(
     if (loading && items.length === 0) {
       return (
         <div className={cn("flex items-center justify-center py-10 text-sm text-[#808080]", className)}>
-          加载中...
+          {t("logs.loading")}
         </div>
       );
     }
@@ -70,7 +73,7 @@ export const LogStream = React.forwardRef<HTMLDivElement, LogStreamProps>(
     if (items.length === 0) {
       return (
         <div className={cn("flex items-center justify-center py-10 text-sm text-[#808080]", className)}>
-          {emptyText}
+          {displayEmpty}
         </div>
       );
     }

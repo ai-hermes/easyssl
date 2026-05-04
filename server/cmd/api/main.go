@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "easyssl/server/docs"
 	"easyssl/server/internal/config"
 	"easyssl/server/internal/db"
 	"easyssl/server/internal/router"

@@ -150,3 +150,30 @@ type OpenApplyCertificateRequest struct {
 	DNSPropagationTimeout int      `json:"dnsPropagationTimeout"`
 	DNSTTL                int      `json:"dnsTTL"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type ChangePasswordRequest struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+type CreateAPIKeyRequest struct {
+	Name      string `json:"name" binding:"required"`
+	ExpiresAt string `json:"expiresAt"`
+}
+
+type DownloadCertificateRequest struct {
+	Format string `json:"format"`
+}
+
+type TestNotificationRequest struct {
+	Provider string `json:"provider"`
+	AccessID string `json:"accessId"`
+}
+
+type StartWorkflowRunRequest struct {
+	Trigger string `json:"trigger"`
+}

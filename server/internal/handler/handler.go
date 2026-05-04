@@ -29,7 +29,7 @@ func (h *Handler) auth(c *gin.Context) model.AuthContext {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param body body object true "email/password"
+// @Param body body model.LoginRequest true "email/password"
 // @Success 200 {object} util.Response
 // @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
@@ -74,7 +74,7 @@ func (h *Handler) Me(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Security ApiKeyAuth
-// @Param body body object true "new password"
+// @Param body body model.ChangePasswordRequest true "new password"
 // @Success 200 {object} util.Response
 // @Router /auth/password [put]
 func (h *Handler) ChangePassword(c *gin.Context) {
@@ -99,7 +99,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Security ApiKeyAuth
-// @Param body body object true "name/expiresAt"
+// @Param body body model.CreateAPIKeyRequest true "name/expiresAt"
 // @Success 200 {object} util.Response
 // @Router /auth/api-keys [post]
 func (h *Handler) CreateAPIKey(c *gin.Context) {
@@ -295,7 +295,7 @@ func (h *Handler) ListAccesses(c *gin.Context) {
 // @Security BearerAuth
 // @Security ApiKeyAuth
 // @Param id path string false "Access id"
-// @Param body body object true "access"
+// @Param body body model.Access true "access"
 // @Success 200 {object} util.Response
 // @Router /accesses [post]
 // @Router /accesses/{id} [put]
@@ -409,7 +409,7 @@ func (h *Handler) GetWorkflow(c *gin.Context) {
 // @Security BearerAuth
 // @Security ApiKeyAuth
 // @Param id path string false "Workflow id"
-// @Param body body object true "workflow"
+// @Param body body model.Workflow true "workflow"
 // @Success 200 {object} util.Response
 // @Router /workflows [post]
 // @Router /workflows/{id} [put]
@@ -550,7 +550,7 @@ func (h *Handler) ListWorkflowRunEvents(c *gin.Context) {
 // @Security BearerAuth
 // @Security ApiKeyAuth
 // @Param id path string true "Workflow id"
-// @Param body body object false "trigger"
+// @Param body body model.StartWorkflowRunRequest false "trigger"
 // @Success 200 {object} util.Response
 // @Router /workflows/{id}/runs [post]
 func (h *Handler) StartWorkflowRun(c *gin.Context) {
@@ -633,7 +633,7 @@ func (h *Handler) ListCertificates(c *gin.Context) {
 // @Security BearerAuth
 // @Security ApiKeyAuth
 // @Param id path string true "Certificate id"
-// @Param body body object false "format"
+// @Param body body model.DownloadCertificateRequest false "format"
 // @Success 200 {object} util.Response
 // @Router /certificates/{id}/download [post]
 func (h *Handler) DownloadCertificate(c *gin.Context) {
@@ -701,7 +701,7 @@ func (h *Handler) Statistics(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Security ApiKeyAuth
-// @Param body body object true "provider/accessId"
+// @Param body body model.TestNotificationRequest true "provider/accessId"
 // @Success 200 {object} util.Response
 // @Router /notifications/test [post]
 func (h *Handler) TestNotification(c *gin.Context) {

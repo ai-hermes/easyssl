@@ -14,8 +14,6 @@ import (
 	"easyssl/server/internal/workflow"
 
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func New(cfg config.Config, database *db.DB) *gin.Engine {
@@ -32,7 +30,9 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	h := handler.New(svc)
 
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/api/openapi.json", func(c *gin.Context) {
+		c.File("docs/swagger.json")
+	})
 
 	auth := r.Group("/api/auth")
 	auth.POST("/login", h.Login)

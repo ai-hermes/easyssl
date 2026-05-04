@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,22 +10,23 @@ import { useToast } from "@/components/ui/toast";
 export default function CertificatesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const { t } = useTranslation();
   const { data } = useQuery({ queryKey: ["certificates"], queryFn: api.listCertificates });
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">证书列表</CardTitle>
+        <CardTitle className="text-sm">{t("certificates.title")}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>SAN</TableHead>
-              <TableHead>算法</TableHead>
-              <TableHead>到期时间</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">动作</TableHead>
+              <TableHead>{t("certificates.columns.san")}</TableHead>
+              <TableHead>{t("certificates.columns.algorithm")}</TableHead>
+              <TableHead>{t("certificates.columns.expiresAt")}</TableHead>
+              <TableHead>{t("certificates.columns.status")}</TableHead>
+              <TableHead className="text-right">{t("certificates.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -51,10 +53,10 @@ export default function CertificatesPage() {
                       a.download = r.fileName || `${c.id}.zip`;
                       a.click();
                       URL.revokeObjectURL(url);
-                      toast.success("证书文件已开始下载");
+                      toast.success(t("certificates.downloadStarted"));
                     }}
                   >
-                    下载
+                    {t("common.download")}
                   </Button>
                   <Button
                     size="sm"
@@ -62,10 +64,10 @@ export default function CertificatesPage() {
                     onClick={async () => {
                       await api.revokeCertificate(c.id);
                       qc.invalidateQueries({ queryKey: ["certificates"] });
-                      toast.info("证书已吊销");
+                      toast.info(t("certificates.revokeSuccess"));
                     }}
                   >
-                    吊销
+                    {t("common.revoke")}
                   </Button>
                 </TableCell>
               </TableRow>

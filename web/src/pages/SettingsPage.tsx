@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { api } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,7 @@ async function copyText(text: string) {
 
   try {
     const ok = document.execCommand("copy");
-    if (!ok) throw new Error("当前浏览器不支持自动复制");
+    if (!ok) throw new Error(i18n.t("common.copyFailed"));
   } finally {
     document.body.removeChild(textarea);
   }
@@ -43,6 +45,7 @@ async function copyText(text: string) {
 
 export default function SettingsPage() {
   const toast = useToast();
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -52,21 +55,7 @@ export default function SettingsPage() {
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
-  const [copiedExample, setCopiedExample] = useState(false);
 
-  const applyExample = useMemo(() => {
-    const key = revealedToken || "YOUR_API_KEY";
-    return `curl -X POST "http://127.0.0.1:8090/api/open/certificates/apply" \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: ${key}" \\
-  -d '{
-    "provider": "tencentcloud",
-    "accessId": "your-access-id",
-    "domains": ["ssl1.example.com", "*.example.com"],
-    "caProvider": "letsencrypt",
-    "keyAlgorithm": "RSA2048"
-  }'`;
-  }, [revealedToken]);
 
   async function loadAPIKeys() {
     setLoadingKeys(true);
@@ -74,7 +63,7 @@ export default function SettingsPage() {
       const res = await api.listAPIKeys();
       setAPIKeys(res.items || []);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "加载 API Key 失败";
+      const msg = e instanceof Error ? e.message : t("settings.apiKey.loadFailed");
       toast.error(msg);
     } finally {
       setLoadingKeys(false);
@@ -89,26 +78,26 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <Card className="max-w-lg">
         <CardHeader>
-          <CardTitle>账户设置</CardTitle>
-          <CardDescription>修改管理员密码后，下次登录即生效。</CardDescription>
+          <CardTitle>{t("settings.account.title")}</CardTitle>
+          <CardDescription>{t("settings.account.desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Input type="password" placeholder="新密码" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input type="password" placeholder={t("settings.account.newPassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
           <Button
             onClick={async () => {
               try {
                 await api.changePassword(password);
-                setPasswordMsg({ type: "success", text: "已更新密码" });
+                setPasswordMsg({ type: "success", text: t("settings.account.success") });
                 setPassword("");
-                toast.success("密码已更新");
+                toast.success(t("settings.account.success"));
               } catch (e) {
-                const t = e instanceof Error ? e.message : "更新失败";
-                setPasswordMsg({ type: "error", text: t });
-                toast.error(t);
+                const errMsg = e instanceof Error ? e.message : t("settings.account.error");
+                setPasswordMsg({ type: "error", text: errMsg });
+                toast.error(errMsg);
               }
             }}
           >
-            更新密码
+            {t("settings.account.update")}
           </Button>
           {passwordMsg ? (
             <p
@@ -124,19 +113,19 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>API Key</CardTitle>
-          <CardDescription>先创建 API Key，再通过 X-API-Key 调用 OpenAPI 申请证书。</CardDescription>
+          <CardTitle>{t("settings.apiKey.title")}</CardTitle>
+          <CardDescription>{t("settings.apiKey.desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-            <Input placeholder="Key 名称（例如：ci-prod）" value={apiKeyName} onChange={(e) => setAPIKeyName(e.target.value)} />
+            <Input placeholder={t("settings.apiKey.namePlaceholder")} value={apiKeyName} onChange={(e) => setAPIKeyName(e.target.value)} />
             <Input type="datetime-local" value={apiKeyExpiresAt} onChange={(e) => setAPIKeyExpiresAt(e.target.value)} />
             <Button
               disabled={creatingKey}
               onClick={async () => {
                 const name = apiKeyName.trim();
                 if (!name) {
-                  toast.error("请先输入 Key 名称");
+                  toast.error(t("settings.apiKey.enterName"));
                   return;
                 }
                 setCreatingKey(true);
@@ -146,33 +135,33 @@ export default function SettingsPage() {
                   setRevealedToken(res.token);
                   setAPIKeyName("");
                   setAPIKeyExpiresAt("");
-                  toast.success("API Key 创建成功（明文仅显示一次）");
+                  toast.success(t("settings.apiKey.createSuccess"));
                   await loadAPIKeys();
                 } catch (e) {
-                  const msg = e instanceof Error ? e.message : "创建 API Key 失败";
+                  const msg = e instanceof Error ? e.message : t("settings.apiKey.createFailed");
                   toast.error(msg);
                 } finally {
                   setCreatingKey(false);
                 }
               }}
             >
-              创建 Key
+              {t("settings.apiKey.create")}
             </Button>
           </div>
 
           {revealedToken ? (
             <div className="space-y-2 rounded-md bg-[#f8fbff] p-3 shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              <div className="text-sm font-medium text-[#171717]">新创建的 Key（仅展示一次）</div>
+              <div className="text-sm font-medium text-[#171717]">{t("settings.apiKey.newToken")}</div>
               <div className="flex flex-col gap-2 md:flex-row">
                 <Input readOnly value={revealedToken} />
                 <Button
                   variant="outline"
                   onClick={async () => {
                     await copyText(revealedToken);
-                    toast.success("已复制 API Key");
+                    toast.success(t("settings.apiKey.copySuccess"));
                   }}
                 >
-                  复制
+                  {t("common.copy")}
                 </Button>
               </div>
             </div>
@@ -181,13 +170,13 @@ export default function SettingsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>名称</TableHead>
-                <TableHead>前缀</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>过期时间</TableHead>
-                <TableHead>最后使用</TableHead>
-                <TableHead>创建时间</TableHead>
-                <TableHead className="text-right">操作</TableHead>
+                <TableHead>{t("settings.apiKey.columns.name")}</TableHead>
+                <TableHead>{t("settings.apiKey.columns.prefix")}</TableHead>
+                <TableHead>{t("settings.apiKey.columns.status")}</TableHead>
+                <TableHead>{t("settings.apiKey.columns.expiresAt")}</TableHead>
+                <TableHead>{t("settings.apiKey.columns.lastUsed")}</TableHead>
+                <TableHead>{t("settings.apiKey.columns.createdAt")}</TableHead>
+                <TableHead className="text-right">{t("settings.apiKey.columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,15 +198,15 @@ export default function SettingsPage() {
                       onClick={async () => {
                         try {
                           await api.revokeAPIKey(item.id);
-                          toast.success("已吊销");
+                          toast.success(t("settings.apiKey.revoked"));
                           await loadAPIKeys();
                         } catch (e) {
-                          const msg = e instanceof Error ? e.message : "吊销失败";
+                          const msg = e instanceof Error ? e.message : t("settings.apiKey.revokeFailed");
                           toast.error(msg);
                         }
                       }}
                     >
-                      吊销
+                      {t("settings.apiKey.revoke")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -225,55 +214,14 @@ export default function SettingsPage() {
               {apiKeys.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-6 text-center text-sm text-[#666]">
-                    {loadingKeys ? "加载中..." : "暂无 API Key"}
+                    {loadingKeys ? t("common.loading") : t("settings.apiKey.noKeys")}
                   </TableCell>
                 </TableRow>
               ) : null}
             </TableBody>
           </Table>
 
-          <Separator className="bg-[#f1f1f1]" />
 
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-[#171717]">OpenAPI 调用示例</div>
-            <div className="group relative rounded-md bg-[#fafafa] p-3 shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              <Button
-                size={copiedExample ? "sm" : "icon"}
-                variant="outline"
-                aria-label={copiedExample ? "已复制" : "复制 curl 示例"}
-                title={copiedExample ? "已复制" : "复制 curl 示例"}
-                className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                onClick={async () => {
-                  try {
-                    await copyText(applyExample);
-                    setCopiedExample(true);
-                    toast.success("示例命令已复制");
-                    window.setTimeout(() => setCopiedExample(false), 1800);
-                  } catch (e) {
-                    const msg = e instanceof Error ? e.message : "复制失败";
-                    toast.error(msg);
-                  }
-                }}
-              >
-                {copiedExample ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                {copiedExample ? <span className="text-xs text-green-700">已复制</span> : null}
-              </Button>
-              <pre className="whitespace-pre-wrap break-all pr-20 font-mono text-xs text-[#171717]">{applyExample}</pre>
-            </div>
-            <div className="rounded-md bg-[#f8fbff] px-3 py-2 text-xs text-[#1f4d8f] shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              Swagger 地址：<span className="font-mono">http://127.0.0.1:8090/swagger/index.html</span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  window.open("/swagger/index.html", "_blank");
-                }}
-              >
-                打开 Swagger
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
