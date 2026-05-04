@@ -162,6 +162,9 @@ jobs:
             EASYSSL_IMAGE="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
             echo "Target image: $EASYSSL_IMAGE"
 
+            # Remove obsolete version attribute if present (backward compat for old compose files)
+            sed -i '/^version:/d' docker-compose.yml
+
             # Replace the first image: line (api service) with the actual image address
             LINE=$(grep -n "image:" docker-compose.yml | head -1 | cut -d: -f1)
             sed -i "${LINE}s|image: .*|image: $EASYSSL_IMAGE|" docker-compose.yml
