@@ -256,6 +256,20 @@ func (h *Handler) ListOpenCertificateRunEvents(c *gin.Context) {
 	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
 }
 
+// ListProviders godoc
+// @Summary List provider definitions
+// @Tags Providers
+// @Produce json
+// @Security BearerAuth
+// @Security ApiKeyAuth
+// @Param kind query string false "provider kind: access, dns, deploy"
+// @Success 200 {object} util.Response
+// @Router /providers [get]
+func (h *Handler) ListProviders(c *gin.Context) {
+	items := h.svc.ListProviderDefinitions(c.Query("kind"))
+	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
+}
+
 // ListAccesses godoc
 // @Summary List accesses
 // @Tags Access

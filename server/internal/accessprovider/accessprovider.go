@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"easyssl/server/internal/model"
+	"easyssl/server/internal/providercatalog"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/alidns"
 	"github.com/qiniu/go-sdk/v7/auth"
@@ -49,7 +50,8 @@ func TestAccess(ctx context.Context, access model.Access) error {
 	case ProviderSSH:
 		return testSSHAccess(ctx, access.Config)
 	default:
-		return fmt.Errorf("unsupported provider: %s", access.Provider)
+		_, err := providercatalog.ValidateAccessConfig(access.Provider, access.Config, nil)
+		return err
 	}
 }
 

@@ -45,6 +45,8 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 	api.GET("/auth/api-keys", h.ListAPIKeys)
 	api.DELETE("/auth/api-keys/:id", h.RevokeAPIKey)
 
+	api.GET("/providers", h.ListProviders)
+
 	api.GET("/accesses", h.ListAccesses)
 	api.POST("/accesses", h.SaveAccess)
 	api.PUT("/accesses/:id", h.SaveAccess)

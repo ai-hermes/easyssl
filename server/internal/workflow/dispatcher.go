@@ -18,6 +18,7 @@ import (
 	"easyssl/server/internal/certacme"
 	"easyssl/server/internal/deployer"
 	"easyssl/server/internal/model"
+	"easyssl/server/internal/providercatalog"
 	"easyssl/server/internal/repository"
 )
 
@@ -136,14 +137,7 @@ func readProvider(config map[string]interface{}) string {
 }
 
 func normalizeDNSProvider(provider string) string {
-	switch strings.ToLower(strings.TrimSpace(provider)) {
-	case "", "aliyun", "alidns":
-		return accessprovider.ProviderAliyun
-	case "tencent", "tencentcloud", "dnspod":
-		return accessprovider.ProviderTencentCloud
-	default:
-		return strings.ToLower(strings.TrimSpace(provider))
-	}
+	return providercatalog.Normalize(provider)
 }
 
 func readAccessID(config map[string]interface{}) string {
@@ -411,8 +405,8 @@ func (d *Dispatcher) executeRun(ctx context.Context, runID string) error {
 			if nodeProvider != accessProvider {
 				return failNode(fmt.Errorf("apply: node provider %s does not match access provider %s", nodeProvider, accessProvider))
 			}
-			if nodeProvider != accessprovider.ProviderAliyun && nodeProvider != accessprovider.ProviderTencentCloud {
-				return failNode(fmt.Errorf("apply: unsupported provider %s", nodeProvider))
+			if _, ok := providercatalog.OperationDefinition("dns", nodeProvider); !ok {
+				return failNode(fmt.Errorf("apply: unsupported dns provider %s", nodeProvider))
 			}
 			appendEvent(node.ID, "log", "dns provider validated", map[string]interface{}{"provider": nodeProvider})
 
