@@ -1,114 +1,124 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import type { Access } from "@/types";
-
-const PROVIDERS = [
-  { value: "aliyun", label: "Aliyun" },
-  { value: "tencentcloud", label: "Tencent Cloud DNSPod" },
-  { value: "qiniu", label: "Qiniu" },
-  { value: "ssh", label: "SSH" },
-];
+import type { Access, ProviderDefinition, ProviderField } from "@/types";
 
 type AccessFormState = {
   id?: string;
   name: string;
   provider: string;
-  accessKeyId: string;
-  accessKeySecret: string;
-  resourceGroupId: string;
-  region: string;
-  tencentSecretId: string;
-  tencentSecretKey: string;
-  tencentSessionToken: string;
-  tencentRegion: string;
-  qiniuAccessKey: string;
-  qiniuSecretKey: string;
-  host: string;
-  port: string;
-  username: string;
-  authMethod: "password" | "key";
-  password: string;
-  key: string;
-  keyPassphrase: string;
+  config: Record<string, unknown>;
 };
 
-function emptyForm(): AccessFormState {
+function defaultValue(field: ProviderField): unknown {
+  if (field.default !== undefined) return field.default;
+  if (field.type === "checkbox") return false;
+  if (field.type === "number") return "";
+  return "";
+}
+
+function buildDefaultConfig(def?: ProviderDefinition) {
+  const config: Record<string, unknown> = {};
+  for (const field of def?.accessFields ?? []) {
+    const value = defaultValue(field);
+    if (value !== "" && value !== undefined) config[field.name] = value;
+  }
+  return config;
+}
+
+function emptyForm(def?: ProviderDefinition): AccessFormState {
   return {
     name: "",
-    provider: "aliyun",
-    accessKeyId: "",
-    accessKeySecret: "",
-    resourceGroupId: "",
-    region: "",
-    tencentSecretId: "",
-    tencentSecretKey: "",
-    tencentSessionToken: "",
-    tencentRegion: "ap-guangzhou",
-    qiniuAccessKey: "",
-    qiniuSecretKey: "",
-    host: "",
-    port: "22",
-    username: "root",
-    authMethod: "password",
-    password: "",
-    key: "",
-    keyPassphrase: "",
+    provider: def?.id ?? "aliyun",
+    config: buildDefaultConfig(def),
   };
 }
 
-function readAliyunConfig(config: Record<string, unknown> | undefined) {
-  const raw = config ?? {};
-  return {
-    accessKeyId: String(raw.accessKeyId ?? ""),
-    resourceGroupId: String(raw.resourceGroupId ?? ""),
-    region: String(raw.region ?? ""),
-  };
+function stringify(v: unknown) {
+  if (v === null || v === undefined) return "";
+  return String(v);
 }
 
-function readSSHConfig(config: Record<string, unknown> | undefined) {
-  const raw = config ?? {};
-  return {
-    host: String(raw.host ?? ""),
-    port: String(raw.port ?? 22),
-    username: String(raw.username ?? "root"),
-    authMethod: (String(raw.authMethod ?? "password") === "key" ? "key" : "password") as "password" | "key",
-  };
+function readConfigValue(config: Record<string, unknown>, field: ProviderField) {
+  const value = config[field.name];
+  if (value === undefined || value === null) return defaultValue(field);
+  return value;
 }
 
-function readTencentConfig(config: Record<string, unknown> | undefined) {
-  const raw = config ?? {};
-  return {
-    secretId: String(raw.secretId ?? ""),
-    region: String(raw.region ?? "ap-guangzhou"),
-  };
+function updateConfig(config: Record<string, unknown>, field: ProviderField, value: unknown) {
+  const next = { ...config };
+  next[field.name] = value;
+  return next;
 }
 
-function readQiniuConfig(config: Record<string, unknown> | undefined) {
-  const raw = config ?? {};
-  return {
-    accessKey: String(raw.accessKey ?? ""),
-  };
+function renderField(field: ProviderField, value: unknown, editing: boolean, onChange: (value: unknown) => void) {
+  const label = `${field.label || field.name}${field.required ? " *" : ""}`;
+  const placeholder = field.placeholder || (field.secret && editing ? `${label}（留空表示不修改）` : label);
+  if (field.type === "checkbox") {
+    return (
+      <label key={field.name} className="ds-ring flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm text-[#171717]">
+        <input type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
+        {label}
+      </label>
+    );
+  }
+  if (field.type === "select") {
+    return (
+      <select
+        key={field.name}
+        className="ds-ring h-9 rounded-md bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
+        value={stringify(value)}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {(field.options ?? []).map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (field.type === "textarea") {
+    return (
+      <textarea
+        key={field.name}
+        className="ds-ring min-h-24 rounded-md bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
+        placeholder={placeholder}
+        value={stringify(value)}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+  return (
+    <Input
+      key={field.name}
+      type={field.type === "password" ? "password" : field.type === "number" ? "number" : "text"}
+      placeholder={placeholder}
+      value={stringify(value)}
+      onChange={(e) => onChange(field.type === "number" ? e.target.value : e.target.value)}
+    />
+  );
 }
 
 export default function AccessesPage() {
   const qc = useQueryClient();
   const toast = useToast();
   const { data } = useQuery({ queryKey: ["accesses"], queryFn: api.listAccesses });
-  const [form, setForm] = useState<AccessFormState>(emptyForm());
+  const { data: providerData } = useQuery({ queryKey: ["providers", "access"], queryFn: () => api.listProviders("access") });
+  const providers = providerData?.items ?? [];
+  const firstProvider = providers[0];
+  const providerMap = useMemo(() => new Map(providers.map((item) => [item.id, item])), [providers]);
+  const [form, setForm] = useState<AccessFormState>(() => emptyForm());
   const [notice, setNotice] = useState<{ type: "error" | "success" | "info"; text: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const editing = Boolean(form.id);
-  const isAliyun = form.provider === "aliyun";
-  const isTencent = form.provider === "tencentcloud";
-  const isQiniu = form.provider === "qiniu";
-  const isSSH = form.provider === "ssh";
+  const selectedProvider = providerMap.get(form.provider) ?? firstProvider;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -117,39 +127,12 @@ export default function AccessesPage() {
         id: form.id,
         name: form.name.trim(),
         provider: form.provider,
-        config: isAliyun
-          ? {
-              accessKeyId: form.accessKeyId.trim(),
-              accessKeySecret: form.accessKeySecret.trim(),
-              resourceGroupId: form.resourceGroupId.trim(),
-              region: form.region.trim(),
-            }
-          : isTencent
-            ? {
-                secretId: form.tencentSecretId.trim(),
-                secretKey: form.tencentSecretKey.trim(),
-                sessionToken: form.tencentSessionToken.trim(),
-                region: form.tencentRegion.trim(),
-              }
-            : isQiniu
-              ? {
-                  accessKey: form.qiniuAccessKey.trim(),
-                  secretKey: form.qiniuSecretKey.trim(),
-                }
-              : {
-                  host: form.host.trim(),
-                  port: Number(form.port || 22),
-                  username: form.username.trim(),
-                  authMethod: form.authMethod,
-                  password: form.password,
-                  key: form.key,
-                  keyPassphrase: form.keyPassphrase,
-                },
+        config: form.config,
       };
       return api.saveAccess(payload);
     },
     onSuccess: () => {
-      setForm(emptyForm());
+      setForm(emptyForm(firstProvider));
       setDialogOpen(false);
       qc.invalidateQueries({ queryKey: ["accesses"] });
       setNotice({ type: "success", text: "授权保存成功" });
@@ -176,199 +159,87 @@ export default function AccessesPage() {
   });
 
   const openCreate = () => {
-    setForm(emptyForm());
+    setForm(emptyForm(firstProvider));
     setDialogOpen(true);
     setNotice(null);
   };
 
   const startEdit = (access: Access) => {
-    if (access.provider === "aliyun") {
-      const aliyun = readAliyunConfig(access.config);
-      setForm({
-        id: access.id,
-        name: access.name,
-        provider: access.provider,
-        accessKeyId: aliyun.accessKeyId,
-        accessKeySecret: "",
-        resourceGroupId: aliyun.resourceGroupId,
-        region: aliyun.region,
-        tencentSecretId: "",
-        tencentSecretKey: "",
-        tencentSessionToken: "",
-        tencentRegion: "ap-guangzhou",
-        qiniuAccessKey: "",
-        qiniuSecretKey: "",
-        host: "",
-        port: "22",
-        username: "root",
-        authMethod: "password",
-        password: "",
-        key: "",
-        keyPassphrase: "",
-      });
-    } else if (access.provider === "tencentcloud") {
-      const tencent = readTencentConfig(access.config);
-      setForm({
-        id: access.id,
-        name: access.name,
-        provider: access.provider,
-        accessKeyId: "",
-        accessKeySecret: "",
-        resourceGroupId: "",
-        region: "",
-        tencentSecretId: tencent.secretId,
-        tencentSecretKey: "",
-        tencentSessionToken: "",
-        tencentRegion: tencent.region,
-        qiniuAccessKey: "",
-        qiniuSecretKey: "",
-        host: "",
-        port: "22",
-        username: "root",
-        authMethod: "password",
-        password: "",
-        key: "",
-        keyPassphrase: "",
-      });
-    } else if (access.provider === "qiniu") {
-      const qiniu = readQiniuConfig(access.config);
-      setForm({
-        id: access.id,
-        name: access.name,
-        provider: access.provider,
-        accessKeyId: "",
-        accessKeySecret: "",
-        resourceGroupId: "",
-        region: "",
-        tencentSecretId: "",
-        tencentSecretKey: "",
-        tencentSessionToken: "",
-        tencentRegion: "ap-guangzhou",
-        qiniuAccessKey: qiniu.accessKey,
-        qiniuSecretKey: "",
-        host: "",
-        port: "22",
-        username: "root",
-        authMethod: "password",
-        password: "",
-        key: "",
-        keyPassphrase: "",
-      });
-    } else {
-      const ssh = readSSHConfig(access.config);
-      setForm({
-        id: access.id,
-        name: access.name,
-        provider: access.provider,
-        accessKeyId: "",
-        accessKeySecret: "",
-        resourceGroupId: "",
-        region: "",
-        tencentSecretId: "",
-        tencentSecretKey: "",
-        tencentSessionToken: "",
-        tencentRegion: "ap-guangzhou",
-        qiniuAccessKey: "",
-        qiniuSecretKey: "",
-        host: ssh.host,
-        port: ssh.port,
-        username: ssh.username,
-        authMethod: ssh.authMethod,
-        password: "",
-        key: "",
-        keyPassphrase: "",
-      });
-    }
+    const def = providerMap.get(access.provider);
+    setForm({
+      id: access.id,
+      name: access.name,
+      provider: access.provider,
+      config: { ...buildDefaultConfig(def), ...(access.config ?? {}) },
+    });
     setDialogOpen(true);
     setNotice(null);
   };
 
+  const onProviderChange = (provider: string) => {
+    const def = providerMap.get(provider);
+    setForm((value) => ({ ...value, provider, config: buildDefaultConfig(def) }));
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-[#171717]">授权管理</h1>
+          <p className="mt-1 text-sm text-[#666]">管理 DNS、云厂商、主机与面板授权，可用于证书申请或部署。</p>
+        </div>
         <Button onClick={openCreate}>新增授权</Button>
       </div>
 
+      {notice ? <div className={`rounded-md px-3 py-2 text-sm ${notice.type === "error" ? "bg-red-50 text-red-700" : notice.type === "success" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>{notice.text}</div> : null}
+
       <Card>
-        <CardHeader className="pb-2">
-          <h2 className="text-lg font-semibold tracking-[-0.02em]">授权列表</h2>
-          <p className="text-xs text-[#666]">先新增授权，再在工作流节点中引用对应 accessId。</p>
+        <CardHeader>
+          <CardTitle>Accesses</CardTitle>
+          <CardDescription>Provider credentials are stored server-side. Secret fields are masked after save.</CardDescription>
         </CardHeader>
-
-        <CardContent className="pt-0">
-          {notice ? (
-            <div
-              className={`mb-3 rounded-md px-3 py-2 text-sm ${
-                notice.type === "error"
-                  ? "bg-[var(--ds-danger-bg)] text-[var(--ds-danger-fg)]"
-                  : notice.type === "success"
-                    ? "bg-[var(--ds-success-bg)] text-[var(--ds-success-fg)]"
-                    : "bg-[var(--ds-info-bg)] text-[var(--ds-info-fg)]"
-              }`}
-            >
-              {notice.text}
-            </div>
-          ) : null}
-
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                <th className="px-2 pb-3 pt-1">名称</th>
-                <th className="px-2 pb-3 pt-1">ID</th>
+        <CardContent>
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-[#777]">
+              <tr>
+                <th className="px-2 pb-3 pt-1">Name</th>
                 <th className="px-2 pb-3 pt-1">Provider</th>
-                <th className="px-2 pb-3 pt-1">配置</th>
-                <th className="px-2 pb-3 pt-1 text-right">动作</th>
+                <th className="px-2 pb-3 pt-1">Config</th>
+                <th className="px-2 pb-3 pt-1 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {data?.items.map((x) => (
-                <tr key={x.id} className="border-t border-[#f1f1f1]">
-                  <td className="px-2 py-3">{x.name}</td>
-                  <td className="px-2 py-3 font-mono text-xs text-[#666]">{x.id}</td>
-                  <td className="px-2 py-3">{x.provider}</td>
-                  <td className="px-2 py-3 text-xs text-[#666]">
-                    {x.provider === "aliyun"
-                      ? (() => {
-                          const cfg = readAliyunConfig(x.config);
-                          const rg = cfg.resourceGroupId ? `, rg=${cfg.resourceGroupId}` : "";
-                          return `ak=${cfg.accessKeyId}${rg}`;
-                        })()
-                      : x.provider === "tencentcloud"
-                        ? (() => {
-                            const cfg = readTencentConfig(x.config);
-                            return `sid=${cfg.secretId}, region=${cfg.region}`;
-                          })()
-                        : x.provider === "qiniu"
-                          ? (() => {
-                              const cfg = readQiniuConfig(x.config);
-                              return `ak=${cfg.accessKey}`;
-                            })()
-                          : (() => {
-                              const cfg = readSSHConfig(x.config);
-                              return `${cfg.username}@${cfg.host}:${cfg.port} (${cfg.authMethod})`;
-                            })()}
-                  </td>
-                  <td className="px-2 py-3 space-x-2 text-right">
-                    <Button size="sm" variant="outline" onClick={() => startEdit(x)}>
-                      编辑
-                    </Button>
-                    <Button size="sm" variant="outline" disabled={testAccess.isPending} onClick={() => testAccess.mutate(x.id!)}>
-                      测试
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={async () => {
-                        await api.deleteAccess(x.id!);
-                        qc.invalidateQueries({ queryKey: ["accesses"] });
-                        toast.info("授权已删除");
-                      }}
-                    >
-                      删除
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-[#eee]">
+              {(data?.items ?? []).map((x) => {
+                const def = providerMap.get(x.provider);
+                return (
+                  <tr key={x.id}>
+                    <td className="px-2 py-3 font-medium text-[#171717]">{x.name}</td>
+                    <td className="px-2 py-3 font-mono text-xs text-[#444]">{def?.label ?? x.provider}</td>
+                    <td className="px-2 py-3 text-xs text-[#777]">{Object.keys(x.config ?? {}).join(", ") || "-"}</td>
+                    <td className="px-2 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" disabled={testAccess.isPending} onClick={() => testAccess.mutate(x.id!)}>
+                          测试
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => startEdit(x)}>
+                          编辑
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            await api.deleteAccess(x.id!);
+                            qc.invalidateQueries({ queryKey: ["accesses"] });
+                            toast.info("授权已删除");
+                          }}
+                        >
+                          删除
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </CardContent>
@@ -377,10 +248,10 @@ export default function AccessesPage() {
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(860px,92vw)] max-h-[86vh] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-white p-5 shadow-2xl focus:outline-none">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[86vh] w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-white p-5 shadow-2xl focus:outline-none">
             <div className="mb-4">
               <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{editing ? "编辑授权" : "新增授权"}</Dialog.Title>
-              <Dialog.Description className="text-sm text-[#666]">配置完成后可用于证书申请或部署节点。</Dialog.Description>
+              <Dialog.Description className="text-sm text-[#666]">配置完成后可用于证书申请或部署节点。新增 provider 表单由后端元数据自动生成。</Dialog.Description>
             </div>
 
             <div className="grid gap-2 md:grid-cols-2">
@@ -388,70 +259,30 @@ export default function AccessesPage() {
               <select
                 className="ds-ring h-9 rounded-md bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
                 value={form.provider}
-                onChange={(e) => setForm((v) => ({ ...v, provider: e.target.value }))}
+                onChange={(e) => onProviderChange(e.target.value)}
               >
-                {PROVIDERS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
+                {providers.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label} ({item.id})
                   </option>
                 ))}
               </select>
 
-              {isAliyun ? (
-                <>
-                  <Input placeholder="AccessKey ID" value={form.accessKeyId} onChange={(e) => setForm((v) => ({ ...v, accessKeyId: e.target.value }))} />
-                  <Input placeholder={editing ? "AccessKey Secret（留空表示不修改）" : "AccessKey Secret"} type="password" value={form.accessKeySecret} onChange={(e) => setForm((v) => ({ ...v, accessKeySecret: e.target.value }))} />
-                  <Input placeholder="Resource Group ID（可选）" value={form.resourceGroupId} onChange={(e) => setForm((v) => ({ ...v, resourceGroupId: e.target.value }))} />
-                  <Input placeholder="Region（可选）" value={form.region} onChange={(e) => setForm((v) => ({ ...v, region: e.target.value }))} />
-                </>
-              ) : null}
+              {(selectedProvider?.accessFields ?? []).map((field) =>
+                renderField(field, readConfigValue(form.config, field), editing, (value) => setForm((current) => ({ ...current, config: updateConfig(current.config, field, value) }))),
+              )}
+            </div>
 
-              {isTencent ? (
-                <>
-                  <Input placeholder="SecretId" value={form.tencentSecretId} onChange={(e) => setForm((v) => ({ ...v, tencentSecretId: e.target.value }))} />
-                  <Input placeholder={editing ? "SecretKey（留空表示不修改）" : "SecretKey"} type="password" value={form.tencentSecretKey} onChange={(e) => setForm((v) => ({ ...v, tencentSecretKey: e.target.value }))} />
-                  <Input placeholder={editing ? "SessionToken（留空表示不修改）" : "SessionToken（可选）"} type="password" value={form.tencentSessionToken} onChange={(e) => setForm((v) => ({ ...v, tencentSessionToken: e.target.value }))} />
-                  <Input placeholder="Region（默认 ap-guangzhou）" value={form.tencentRegion} onChange={(e) => setForm((v) => ({ ...v, tencentRegion: e.target.value }))} />
-                </>
-              ) : null}
-
-              {isQiniu ? (
-                <>
-                  <Input placeholder="Qiniu AccessKey" value={form.qiniuAccessKey} onChange={(e) => setForm((v) => ({ ...v, qiniuAccessKey: e.target.value }))} />
-                  <Input type="password" placeholder={editing ? "Qiniu SecretKey（留空表示不修改）" : "Qiniu SecretKey"} value={form.qiniuSecretKey} onChange={(e) => setForm((v) => ({ ...v, qiniuSecretKey: e.target.value }))} />
-                </>
-              ) : null}
-
-              {isSSH ? (
-                <>
-                  <Input placeholder="Host" value={form.host} onChange={(e) => setForm((v) => ({ ...v, host: e.target.value }))} />
-                  <Input placeholder="Port" value={form.port} onChange={(e) => setForm((v) => ({ ...v, port: e.target.value }))} />
-                  <Input placeholder="Username" value={form.username} onChange={(e) => setForm((v) => ({ ...v, username: e.target.value }))} />
-                  <select
-                    className="ds-ring h-9 rounded-md bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
-                    value={form.authMethod}
-                    onChange={(e) => setForm((v) => ({ ...v, authMethod: (e.target.value === "key" ? "key" : "password") as "password" | "key" }))}
-                  >
-                    <option value="password">Password</option>
-                    <option value="key">Private Key</option>
-                  </select>
-                  {form.authMethod === "password" ? (
-                    <Input type="password" placeholder={editing ? "Password（留空表示不修改）" : "Password"} value={form.password} onChange={(e) => setForm((v) => ({ ...v, password: e.target.value }))} />
-                  ) : (
-                    <>
-                      <Input type="password" placeholder={editing ? "Private Key（留空表示不修改）" : "Private Key"} value={form.key} onChange={(e) => setForm((v) => ({ ...v, key: e.target.value }))} />
-                      <Input type="password" placeholder={editing ? "Key Passphrase（留空表示不修改）" : "Key Passphrase（可选）"} value={form.keyPassphrase} onChange={(e) => setForm((v) => ({ ...v, keyPassphrase: e.target.value }))} />
-                    </>
-                  )}
-                </>
-              ) : null}
+            <div className="mt-3 text-xs text-[#777]">
+              Provider: <span className="font-mono">{selectedProvider?.id ?? form.provider}</span>
+              {selectedProvider?.accessProviderId && selectedProvider.accessProviderId !== selectedProvider.id ? <span> · Access: <span className="font-mono">{selectedProvider.accessProviderId}</span></span> : null}
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 取消
               </Button>
-              <Button disabled={save.isPending} onClick={() => save.mutate()}>
+              <Button disabled={save.isPending || providers.length === 0} onClick={() => save.mutate()}>
                 {editing ? "保存修改" : "新增授权"}
               </Button>
             </div>

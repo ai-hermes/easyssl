@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { api } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,30 @@ function fmtTime(raw?: string) {
   return t.toLocaleString();
 }
 
+async function copyText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    const ok = document.execCommand("copy");
+    if (!ok) throw new Error("当前浏览器不支持自动复制");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 export default function SettingsPage() {
   const toast = useToast();
   const [password, setPassword] = useState("");
@@ -27,6 +52,7 @@ export default function SettingsPage() {
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
+  const [copiedExample, setCopiedExample] = useState(false);
 
   const applyExample = useMemo(() => {
     const key = revealedToken || "YOUR_API_KEY";
@@ -142,7 +168,7 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   onClick={async () => {
-                    await navigator.clipboard.writeText(revealedToken);
+                    await copyText(revealedToken);
                     toast.success("已复制 API Key");
                   }}
                 >
@@ -210,22 +236,34 @@ export default function SettingsPage() {
 
           <div className="space-y-2">
             <div className="text-sm font-medium text-[#171717]">OpenAPI 调用示例</div>
-            <div className="rounded-md bg-[#fafafa] p-3 shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              <pre className="whitespace-pre-wrap break-all font-mono text-xs text-[#171717]">{applyExample}</pre>
+            <div className="group relative rounded-md bg-[#fafafa] p-3 shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
+              <Button
+                size={copiedExample ? "sm" : "icon"}
+                variant="outline"
+                aria-label={copiedExample ? "已复制" : "复制 curl 示例"}
+                title={copiedExample ? "已复制" : "复制 curl 示例"}
+                className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                onClick={async () => {
+                  try {
+                    await copyText(applyExample);
+                    setCopiedExample(true);
+                    toast.success("示例命令已复制");
+                    window.setTimeout(() => setCopiedExample(false), 1800);
+                  } catch (e) {
+                    const msg = e instanceof Error ? e.message : "复制失败";
+                    toast.error(msg);
+                  }
+                }}
+              >
+                {copiedExample ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {copiedExample ? <span className="text-xs text-green-700">已复制</span> : null}
+              </Button>
+              <pre className="whitespace-pre-wrap break-all pr-20 font-mono text-xs text-[#171717]">{applyExample}</pre>
             </div>
             <div className="rounded-md bg-[#f8fbff] px-3 py-2 text-xs text-[#1f4d8f] shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
               Swagger 地址：<span className="font-mono">http://127.0.0.1:8090/swagger/index.html</span>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(applyExample);
-                  toast.success("示例命令已复制");
-                }}
-              >
-                复制 curl 示例
-              </Button>
               <Button
                 variant="ghost"
                 onClick={() => {

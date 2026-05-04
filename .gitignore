@@ -39,3 +39,4 @@ web/.agents/
 # Local temp/cache
 .tmp/
 certimate
+*.tsbuildinfo

@@ -1,5 +1,5 @@
 import { request } from "./client";
-import type { APIKeyItem, Access, Certificate, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
+import type { APIKeyItem, Access, Certificate, ProviderDefinition, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
 
 export const api = {
   login: (email: string, password: string) => request<{ token: string; admin: { id: string; email: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -12,6 +12,11 @@ export const api = {
     }),
   listAPIKeys: () => request<{ items: APIKeyItem[]; totalItems: number }>("/auth/api-keys"),
   revokeAPIKey: (id: string) => request<{}>(`/auth/api-keys/${id}`, { method: "DELETE" }),
+
+  listProviders: (kind?: "access" | "dns" | "deploy") => {
+    const suffix = kind ? `?kind=${encodeURIComponent(kind)}` : "";
+    return request<{ items: ProviderDefinition[]; totalItems: number }>(`/providers${suffix}`);
+  },
 
   listAccesses: () => request<{ items: Access[]; totalItems: number }>("/accesses"),
   saveAccess: (payload: Access) => request<Access>(payload.id ? `/accesses/${payload.id}` : "/accesses", { method: payload.id ? "PUT" : "POST", body: JSON.stringify(payload) }),

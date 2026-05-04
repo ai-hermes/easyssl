@@ -17,6 +17,7 @@ import (
 	"easyssl/server/internal/accessprovider"
 	"easyssl/server/internal/middleware"
 	"easyssl/server/internal/model"
+	"easyssl/server/internal/providercatalog"
 	"easyssl/server/internal/repository"
 	wf "easyssl/server/internal/workflow"
 
@@ -413,14 +414,7 @@ func (s *Service) TestNotification(ctx context.Context, auth model.AuthContext, 
 }
 
 func normalizeOpenProvider(provider string) string {
-	switch strings.ToLower(strings.TrimSpace(provider)) {
-	case "aliyun", "alidns":
-		return accessprovider.ProviderAliyun
-	case "tencent", "tencentcloud", "dnspod":
-		return accessprovider.ProviderTencentCloud
-	default:
-		return strings.ToLower(strings.TrimSpace(provider))
-	}
+	return providercatalog.Normalize(provider)
 }
 
 func normalizeDomains(domains []string) []string {
@@ -463,8 +457,8 @@ func (s *Service) OpenApplyCertificate(ctx context.Context, auth model.AuthConte
 	if provider != accessProvider {
 		return nil, fmt.Errorf("provider %s does not match access provider %s", provider, accessProvider)
 	}
-	if provider != accessprovider.ProviderAliyun && provider != accessprovider.ProviderTencentCloud {
-		return nil, fmt.Errorf("unsupported provider %s", provider)
+	if _, ok := providercatalog.OperationDefinition("dns", provider); !ok {
+		return nil, fmt.Errorf("unsupported dns provider %s", provider)
 	}
 
 	nodeConfig := map[string]interface{}{

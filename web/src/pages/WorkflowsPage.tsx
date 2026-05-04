@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { LogStream } from "@/components/log-stream";
 import type { Workflow, WorkflowRunNode } from "@/types";
 
 type FlowNodeData = {
@@ -52,20 +53,20 @@ type WorkflowTemplateKey = "apply-only" | "apply-aliyun" | "apply-qiniu" | "appl
 function WorkflowPreviewNode({ data }: NodeProps<FlowNodeData>) {
   const action = (data.action || "").toLowerCase();
   return (
-    <div className="relative rounded-[inherit] px-2 py-1.5 text-sm text-[#171717]">
+    <div className="relative flex h-full w-full items-center justify-center rounded-[inherit] px-3 py-2 text-sm text-[#171717]">
       {action !== "start" ? (
         <Handle
           type="target"
           position={Position.Top}
-          style={{ left: "50%", top: 0, transform: "translate(-50%, -70%)" }}
+          style={{ left: "50%", top: -5, transform: "translateX(-50%)" }}
         />
       ) : null}
-      <div>{data.label || data.name}</div>
+      <div className="truncate">{data.label || data.name}</div>
       {action !== "end" ? (
         <Handle
           type="source"
           position={Position.Bottom}
-          style={{ left: "50%", bottom: 0, transform: "translate(-50%, 70%)" }}
+          style={{ left: "50%", bottom: -5, transform: "translateX(-50%)" }}
         />
       ) : null}
     </div>
@@ -313,6 +314,19 @@ function formatDateTime(v?: string) {
   return d.toLocaleString();
 }
 
+function formatDateTimeCN(v?: string) {
+  if (!v) return "-";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return "-";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}年${mm}月${dd}日 ${hh}:${min}:${ss}`;
+}
+
 function nodeStatusColor(status?: string) {
   switch ((status || "").toLowerCase()) {
     case "running":
@@ -453,12 +467,13 @@ export default function WorkflowsPage() {
       return {
         ...n,
         style: {
-          border: n.id === selectedRunNodeID ? "2px solid #171717" : "1px solid #e5e5e5",
           borderRadius: 10,
-          padding: 8,
           background: nodeStatusColor(status),
           width: 240,
-          boxShadow: "rgba(0,0,0,.04) 0 2px 2px",
+          boxShadow:
+            n.id === selectedRunNodeID
+              ? "rgb(23, 23, 23) 0px 0px 0px 2px, rgba(0,0,0,.04) 0px 2px 2px"
+              : "rgb(235, 235, 235) 0px 0px 0px 1px, rgba(0,0,0,.04) 0px 2px 2px",
         },
         data: { ...n.data, label: `${n.data.name}${status ? ` · ${status}` : ""}` },
       };
@@ -473,12 +488,10 @@ export default function WorkflowsPage() {
       return {
         ...n,
         style: {
-          border: "1px solid #e5e5e5",
           borderRadius: 10,
-          padding: 8,
           background: "#ffffff",
           width: 260,
-          boxShadow: "rgba(0,0,0,.04) 0 2px 2px",
+          boxShadow: "rgb(235, 235, 235) 0px 0px 0px 1px, rgba(0,0,0,.04) 0px 2px 2px",
         },
         data: { ...n.data, label: n.data.name },
       };
@@ -738,22 +751,24 @@ export default function WorkflowsPage() {
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
-          <Dialog.Content className="fixed right-0 top-0 z-50 h-screen w-[min(960px,96vw)] overflow-y-auto bg-[#f5f5f7] shadow-2xl focus:outline-none">
-            <div className="sticky top-0 z-10 border-b border-[#ececec] bg-[#272729] px-5 py-4 text-white">
+          <Dialog.Content className="fixed right-0 top-0 z-50 h-screen w-[min(960px,96vw)] overflow-y-auto bg-white shadow-2xl focus:outline-none">
+            <div className="sticky top-0 z-10 border-b border-[#f1f1f1] bg-white/95 px-6 py-4 backdrop-blur">
               <div className="flex items-center justify-between">
                 <div>
-                  <Dialog.Title className="text-sm font-medium">执行回显 {selectedRunID ? `(${selectedRunID.slice(0, 8)})` : ""}</Dialog.Title>
-                  <Dialog.Description className="mt-1 text-xs text-[#c8c8ce]">点击节点可查看该节点执行日志</Dialog.Description>
+                  <div className="flex items-center gap-2">
+                    <Dialog.Title className="text-sm font-semibold text-[#171717]">执行回显 {selectedRunID ? `(${selectedRunID.slice(0, 8)})` : ""}</Dialog.Title>
+                    {selectedRun ? <StatusBadge status={selectedRun.status} /> : null}
+                  </div>
+                  <Dialog.Description className="mt-1 text-xs text-[#666]">点击节点可查看该节点执行日志</Dialog.Description>
                 </div>
-                <div className="flex items-center gap-2">
-                  {selectedRun ? <StatusBadge status={selectedRun.status} /> : null}
+                <div className="flex items-center">
                   <Button size="sm" variant="outline" onClick={() => setRunDrawerOpen(false)}>关闭</Button>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3 p-5">
-              <div className="h-[360px] rounded-lg border border-[#ebebeb] bg-white">
+            <div className="space-y-6 p-6">
+              <div className="h-[360px] rounded-xl bg-white ds-card">
                 <ReactFlow
                   nodes={runFlowPreview.nodes}
                   edges={runFlowPreview.edges}
@@ -771,54 +786,61 @@ export default function WorkflowsPage() {
               </div>
 
               {!selectedRunNodeID ? (
-                <div className="rounded-md border border-[#ebebeb] bg-white px-4 py-6 text-sm text-[#666]">
+                <div className="rounded-xl bg-white ds-card px-6 py-8 text-center text-sm text-[#666]">
                   请先点击流程图中的节点查看该节点状态与执行日志。
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <div>
-                    <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#666]">节点状态</div>
-                    <div className="rounded-md border border-[#ebebeb] bg-white p-3 text-sm">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#808080]">节点状态</div>
+                    <div className="rounded-xl bg-white ds-card p-5 text-sm">
                       {selectedNodeRun ? (
-                        <div className="space-y-2">
-                          <div className="text-xs text-[#808080]">Node ID</div>
-                          <div className="font-mono">{selectedNodeRun.nodeId}</div>
-                          <div className="text-xs text-[#808080]">状态</div>
-                          <div><StatusBadge status={selectedNodeRun.status} /></div>
-                          <div className="text-xs text-[#808080]">Provider</div>
-                          <div>{selectedNodeRun.provider || "-"}</div>
-                          <div className="text-xs text-[#808080]">开始 / 结束</div>
-                          <div>{formatDateTime(selectedNodeRun.startedAt)} / {formatDateTime(selectedNodeRun.endedAt)}</div>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">Node ID</div>
+                              <div className="mt-1 font-mono text-sm text-[#171717]">{selectedNodeRun.nodeId}</div>
+                            </div>
+                            <div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">状态</div>
+                              <div className="mt-1"><StatusBadge status={selectedNodeRun.status} /></div>
+                            </div>
+                            <div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">Provider</div>
+                              <div className="mt-1 font-mono text-sm text-[#171717]">{selectedNodeRun.provider || "-"}</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">开始时间</div>
+                              <div className="mt-1 text-sm text-[#171717]">{formatDateTimeCN(selectedNodeRun.startedAt)}</div>
+                            </div>
+                            <div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">结束时间</div>
+                              <div className="mt-1 text-sm text-[#171717]">{formatDateTimeCN(selectedNodeRun.endedAt)}</div>
+                            </div>
+                          </div>
                           {selectedNodeRun.error ? (
-                            <>
-                              <div className="text-xs text-[#808080]">错误</div>
-                              <div className="text-[var(--ds-danger-fg)] break-all">{selectedNodeRun.error}</div>
-                            </>
+                            <div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">错误</div>
+                              <div className="mt-1 text-sm text-[var(--ds-danger-fg)] break-all">{selectedNodeRun.error}</div>
+                            </div>
                           ) : null}
                         </div>
                       ) : (
-                        <div className="text-[#808080]">该节点没有执行记录（可能是 start/end 节点或本次运行未执行到该节点）。</div>
+                        <div className="text-sm text-[#808080]">该节点没有执行记录（可能是 start/end 节点或本次运行未执行到该节点）。</div>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#666]">事件日志 (Node: {selectedRunNodeID})</div>
-                    <div className="max-h-[260px] overflow-auto ds-scrollbar rounded-md border border-[#ebebeb] bg-white p-2">
-                      {(runEventsQuery.data?.items || []).length ? (
-                        runEventsQuery.data!.items.map((e) => (
-                          <div key={e.id} className="border-b border-[#f1f1f1] py-2 last:border-0">
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="font-mono text-[#666]">{formatDateTime(e.createdAt)}</span>
-                              <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5">{e.eventType}</span>
-                              <span className="font-mono text-[#808080]">{e.nodeId || "-"}</span>
-                            </div>
-                            <div className="mt-1 text-sm text-[#171717]">{e.message || "-"}</div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="py-4 text-sm text-[#808080]">{runEventsQuery.isFetching ? "加载中..." : "暂无日志"}</div>
-                      )}
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#808080]">事件日志 <span className="font-normal normal-case tracking-normal text-[#999]">(Node: {selectedRunNodeID})</span></div>
+                    <div className="rounded-xl bg-white ds-card p-0 overflow-hidden">
+                      <LogStream
+                        items={runEventsQuery.data?.items || []}
+                        loading={runEventsQuery.isFetching}
+                        emptyText={runEventsQuery.isFetching ? "加载中..." : "暂无日志"}
+                      />
                     </div>
                   </div>
                 </div>
