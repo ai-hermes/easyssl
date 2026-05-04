@@ -9,6 +9,8 @@
       "certificates": "Certificates",
       "settings": "Settings",
       "docs": "Docs",
+      "openapi": "OpenAPI",
+      "apiDocs": "API Docs",
       "users": "Users"
     },
     "logout": "Logout"
@@ -203,6 +205,14 @@
     },
     "downloadStarted": "Certificate download started",
     "revokeSuccess": "Certificate revoked"
+  },
+  "openapiDocs": {
+    "title": "OpenAPI Documentation",
+    "description": "1) Log in and create an API Key in Settings → OpenAPI (shown once).\n2) Call the certificate endpoints below with `X-API-Key: <token>`."
+  },
+  "apiDocs": {
+    "title": "API Documentation",
+    "description": "1) Call POST /api/auth/login to obtain a JWT token.\n2) Business APIs accept `Authorization: Bearer <token>` or `X-API-Key: <token>`.\n3) Admin-only endpoints (e.g., user management) are restricted to built-in administrators."
   },
   "docs": {
     "title": "OpenAPI Docs",

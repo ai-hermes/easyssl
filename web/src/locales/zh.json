@@ -9,6 +9,8 @@
       "certificates": "证书",
       "settings": "设置",
       "docs": "文档",
+      "openapi": "OpenAPI",
+      "apiDocs": "API 文档",
       "users": "用户"
     },
     "logout": "退出"
@@ -203,6 +205,14 @@
     },
     "downloadStarted": "证书文件已开始下载",
     "revokeSuccess": "证书已吊销"
+  },
+  "openapiDocs": {
+    "title": "OpenAPI 文档",
+    "description": "1) 登录系统后，在「设置 → OpenAPI」页面创建 API Key（仅展示一次）。\n2) 使用 `X-API-Key: <token>` 调用下方证书申请接口。"
+  },
+  "apiDocs": {
+    "title": "API 文档",
+    "description": "1) 调用 POST /api/auth/login 获取 JWT Token。\n2) 业务 API 支持 `Authorization: Bearer <token>` 或 `X-API-Key: <token>` 认证。\n3) 管理后台接口（如用户管理）仅内置管理员可调用。"
   },
   "docs": {
     "title": "OpenAPI 文档",

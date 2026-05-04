@@ -402,7 +402,13 @@ function TryItOut({
   );
 }
 
-export default function OpenAPIDocs() {
+export default function OpenAPIDocs({
+  includeTags,
+  description,
+}: {
+  includeTags?: string[];
+  description?: string;
+} = {}) {
   const { t } = useTranslation();
   const [spec, setSpec] = useState<OpenAPISpec | null>(null);
   const [loading, setLoading] = useState(true);
@@ -428,12 +434,13 @@ export default function OpenAPIDocs() {
         const op = item[method];
         if (!op) return;
         const tag = op.tags?.[0] || "Default";
+        if (includeTags && !includeTags.includes(tag)) return;
         if (!map.has(tag)) map.set(tag, []);
         map.get(tag)!.push({ id: `${method}-${path}`, method, path, op });
       });
     });
     return Array.from(map.entries()).map(([tag, items]) => ({ tag, items }));
-  }, [spec]);
+  }, [spec, includeTags]);
 
   const toggle = (id: string) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
 
@@ -453,10 +460,10 @@ export default function OpenAPIDocs() {
 
   return (
     <div className="space-y-6">
-      {spec.info.description && (
+      {(description || spec.info.description) && (
         <Card>
           <CardContent className="py-4 text-sm leading-relaxed text-[#666] whitespace-pre-line">
-            {spec.info.description}
+            {description || spec.info.description}
           </CardContent>
         </Card>
       )}
