@@ -16,9 +16,9 @@ This repository is split into two apps:
 - `cp .env.example .env`: initialize root runtime config.
 - `cd server && go run ./cmd/migrate`: apply DB migrations.
 - `cd server && go run ./cmd/api`: run backend at `127.0.0.1:8090` (from `.env`).
-- `cd web && npm install && npm run dev`: run frontend locally (Vite dev server).
-- `cd web && npm run build`: type-check and create production build in `web/dist`.
-- `cd web && npm run preview`: preview the built frontend locally.
+- `cd web && pnpm install && pnpm run dev`: run frontend locally (Vite dev server).
+- `cd web && pnpm run build`: type-check and create production build in `web/dist`.
+- `cd web && pnpm run preview`: preview the built frontend locally.
 - `cd server && go test ./...`: run backend tests (add/maintain as features evolve).
 
 ## Coding Style & Naming Conventions
@@ -32,7 +32,7 @@ This repository is split into two apps:
 - Current coverage is minimal; add tests with each non-trivial change.
 - Go tests live as `*_test.go` beside implementation files.
 - Frontend tests are not scaffolded yet; if introduced, place under `web/src` and use `*.test.ts(x)`.
-- Before opening a PR, run `go test ./...` and `npm run build`.
+- Before opening a PR, run `go test ./...` and `pnpm run build`.
 
 ## Commit & Pull Request Guidelines
 - Follow the existing Conventional Commit style seen in history:
@@ -52,3 +52,7 @@ This repository is split into two apps:
 - Never commit real secrets in `.env`; use `.env.example` templates only.
 - Use only repository-root `.env` / `.env.example` for configuration; do not add per-module `.env.example` duplicates.
 - Rotate `JWT_SECRET` and database credentials for non-local environments.
+
+## Package Manager
+- Frontend (`web/`) uses **pnpm** as the package manager. Do not use `npm` or `yarn` in the `web/` directory.
+- If both `package-lock.json` and `pnpm-lock.yaml` exist, rely on `pnpm-lock.yaml` and remove the `package-lock.json` to avoid lockfile conflicts.

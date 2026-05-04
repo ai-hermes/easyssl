@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { InlineEdit } from "@/components/ui/inline-edit";
 import { useToast } from "@/components/ui/toast";
 import { LogStream } from "@/components/log-stream";
 import type { Workflow, WorkflowRunNode } from "@/types";
@@ -344,6 +346,7 @@ export default function WorkflowsPage() {
   const { data } = useQuery({ queryKey: ["workflows"], queryFn: api.listWorkflows });
 
   const [editingID, setEditingID] = useState<string | undefined>(undefined);
+  const [editingEnabled, setEditingEnabled] = useState(true);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [templateKey, setTemplateKey] = useState<WorkflowTemplateKey>("apply-only");
@@ -517,7 +520,7 @@ export default function WorkflowsPage() {
         description,
         trigger: "manual",
         triggerCron: "",
-        enabled: true,
+        enabled: editingEnabled,
         graphDraft: graph as unknown as Record<string, unknown>,
         graphContent: graph as unknown as Record<string, unknown>,
         hasDraft: true,
@@ -568,6 +571,7 @@ export default function WorkflowsPage() {
   const resetEditor = () => {
     const spec = makeTemplateSpec("apply-only");
     setEditingID(undefined);
+    setEditingEnabled(true);
     setName("");
     setDescription("");
     setTemplateKey("apply-only");
@@ -589,6 +593,7 @@ export default function WorkflowsPage() {
   const loadWorkflow = (workflow: Workflow) => {
     const spec = graphToSpec(pickWorkflowGraph(workflow));
     setEditingID(workflow.id);
+    setEditingEnabled(workflow.enabled);
     setName(workflow.name);
     setDescription(workflow.description);
     setSpecText(dumpSpec(spec));
@@ -621,6 +626,7 @@ export default function WorkflowsPage() {
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
                 <th className="px-2 pb-3 pt-1">{t("workflows.columns.name")}</th>
+                <th className="px-2 pb-3 pt-1">{t("workflows.columns.status")}</th>
                 <th className="px-2 pb-3 pt-1">{t("workflows.columns.lastRun")}</th>
                 <th className="px-2 pb-3 pt-1">{t("workflows.columns.lastTime")}</th>
                 <th className="px-2 pb-3 pt-1 text-right">{t("workflows.columns.actions")}</th>
@@ -641,6 +647,11 @@ export default function WorkflowsPage() {
                     }}
                   >
                     <td className={`px-2 py-3 ${selected ? "text-[#171717] font-medium" : ""}`}>{w.name}</td>
+                    <td className="px-2 py-3">
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${w.enabled ? "border-transparent bg-emerald-100 text-emerald-700" : "border-transparent bg-slate-100 text-slate-700"}`}>
+                        {w.enabled ? t("common.enabled") : t("common.disabled")}
+                      </span>
+                    </td>
                     <td className="px-2 py-3"><StatusBadge status={w.lastRunStatus} /></td>
                     <td className="px-2 py-3 text-[#666]">{formatDateTime(w.lastRunTime)}</td>
                     <td className="px-2 py-3 space-x-2 text-right">
@@ -849,37 +860,55 @@ export default function WorkflowsPage() {
             <div className="sticky top-0 z-10 border-b border-[#ececec] bg-white/95 px-5 py-4 backdrop-blur">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{isEditing ? t("workflows.editTitle") : t("workflows.createTitle")}</Dialog.Title>
-                  <Dialog.Description className="text-sm text-[#666]">{t("workflows.dialogDescription")}</Dialog.Description>
+                  <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{isEditing ? (name || t("workflows.editTitle")) : t("workflows.createTitle")}</Dialog.Title>
+                  <Dialog.Description className="text-sm text-[#666]">{isEditing ? (description || t("workflows.dialogDescription")) : t("workflows.dialogDescription")}</Dialog.Description>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusBadge status={isEditing ? "processing" : "pending"} />
-                  <Button onClick={() => save.mutate()} disabled={save.isPending}>{isEditing ? t("workflows.saveWorkflow") : t("workflows.createWorkflow")}</Button>
+                  <Button onClick={() => save.mutate()} disabled={save.isPending}>{t("common.save")}</Button>
+                  <Dialog.Close asChild>
+                    <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
+                  </Dialog.Close>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 p-5 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-4">
-                <div className="rounded-lg border border-[#ececec] bg-[#fcfcfc] p-3">
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#808080]">{t("workflows.basicInfo")}</div>
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <Input placeholder={t("workflows.namePlaceholder")} value={name} onChange={(e) => setName(e.target.value)} />
-                    <Input placeholder={t("workflows.descriptionPlaceholder")} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <div className="space-y-4 p-5">
+              {/* Section 1: 基本信息 */}
+              <div className="rounded-lg p-4" style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 2px, #fafafa 0px 0px 0px 1px" }}>
+                <div className="mb-3 text-xs font-medium uppercase tracking-wide text-[#808080]">{t("workflows.basicInfo")}</div>
+                {isEditing ? (
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="w-20 shrink-0 whitespace-nowrap text-sm font-medium text-[#666]">{t("workflows.workflowId")}:</span>
+                    <span className="font-mono text-sm text-[#4d4d4d]">{editingID}</span>
                   </div>
-                  {isEditing ? (
-                    <div className="mt-2 text-xs text-[#777]">
-                      {t("workflows.workflowId")}: <span className="font-mono">{editingID}</span>
+                ) : null}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="flex items-center gap-3">
+                      <label className="w-20 shrink-0 whitespace-nowrap text-sm font-medium text-[#666]">{t("workflows.nameLabel")}:</label>
+                      <InlineEdit value={name} onSave={setName} placeholder={t("workflows.namePlaceholder")} />
                     </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-lg border border-[#ececec] p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="text-xs font-medium uppercase tracking-wide text-[#808080]">{t("workflows.yamlOrchestration")}</div>
+                    <div className="flex items-center gap-3">
+                      <label className="w-20 shrink-0 whitespace-nowrap text-sm font-medium text-[#666]">{t("workflows.descriptionPlaceholder")}:</label>
+                      <InlineEdit value={description} onSave={setDescription} placeholder={t("workflows.descriptionPlaceholder")} />
+                    </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <label className="w-20 shrink-0 whitespace-nowrap text-sm font-medium text-[#666]">{t("workflows.statusLabel")}:</label>
+                    <div className="flex h-8 items-center gap-2">
+                      <Switch checked={editingEnabled} onCheckedChange={setEditingEnabled} />
+                      <span className="text-sm text-[#4d4d4d]">{editingEnabled ? t("common.enabled") : t("common.disabled")}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: 流程编排 */}
+              <div className="rounded-lg p-4" style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 2px, #fafafa 0px 0px 0px 1px" }}>
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="text-xs font-medium uppercase tracking-wide text-[#808080]">{t("workflows.yamlOrchestration")}</div>
                   {!isEditing ? (
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button variant="outline" onClick={resetEditor}>{t("workflows.newTemplate")}</Button>
                       <select
                         className="ds-ring h-9 rounded-md bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
@@ -893,31 +922,28 @@ export default function WorkflowsPage() {
                       <Button variant="outline" onClick={applyTemplate}>{t("workflows.applyTemplate")}</Button>
                     </div>
                   ) : null}
-                  <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} className="min-h-[520px] font-mono text-xs" />
-                  {parsedSpec.error ? <div className="mt-2 rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{t("workflows.yamlError")}: {parsedSpec.error}</div> : null}
-                  {error ? <div className="mt-2 rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{error}</div> : null}
                 </div>
-              </div>
-
-              <div className="space-y-2 xl:sticky xl:top-[88px] xl:self-start">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{t("workflows.flowPreview")}</div>
-                  <span className="text-xs text-[#808080]">{t("workflows.flowPreviewHint")}</span>
-                </div>
-                <div className="h-[680px] rounded-lg border border-[#ebebeb]">
-                  <ReactFlow
-                    nodes={editorFlowPreview.nodes}
-                    edges={editorFlowPreview.edges}
-                    nodeTypes={workflowNodeTypes}
-                    defaultEdgeOptions={{ markerEnd: { type: MarkerType.ArrowClosed } }}
-                    defaultMarkerColor="#171717"
-                    fitView
-                    fitViewOptions={{ padding: 0.15, minZoom: 0.2, maxZoom: 1.2 }}
-                    onInit={setEditorFlowInstance}
-                  >
-                    <Controls />
-                    <Background />
-                  </ReactFlow>
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
+                  <div className="space-y-2">
+                    <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} className="h-[520px] min-h-0 font-mono text-xs" />
+                    {parsedSpec.error ? <div className="rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{t("workflows.yamlError")}: {parsedSpec.error}</div> : null}
+                    {error ? <div className="rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{error}</div> : null}
+                  </div>
+                  <div className="h-[520px] rounded-lg" style={{ boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px" }}>
+                    <ReactFlow
+                      nodes={editorFlowPreview.nodes}
+                      edges={editorFlowPreview.edges}
+                      nodeTypes={workflowNodeTypes}
+                      defaultEdgeOptions={{ markerEnd: { type: MarkerType.ArrowClosed } }}
+                      defaultMarkerColor="#171717"
+                      fitView
+                      fitViewOptions={{ padding: 0.15, minZoom: 0.2, maxZoom: 1.2 }}
+                      onInit={setEditorFlowInstance}
+                    >
+                      <Controls />
+                      <Background />
+                    </ReactFlow>
+                  </div>
                 </div>
               </div>
             </div>

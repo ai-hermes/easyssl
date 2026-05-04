@@ -1172,7 +1172,12 @@
             "properties": {
                 "config": {
                     "type": "object",
-                    "additionalProperties": true
+                    "description": "Provider-specific configuration. Fields depend on the selected provider. Call GET /providers?kind=access to see available fields for each provider.",
+                    "additionalProperties": true,
+                    "example": {
+                        "accessKeyId": "your-access-key-id",
+                        "accessKeySecret": "your-access-key-secret"
+                    }
                 },
                 "createdAt": {
                     "type": "string"
