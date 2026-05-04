@@ -27,6 +27,7 @@ export default function Layout() {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur" style={{ boxShadow: "rgba(0,0,0,0.08)_0px_0px_0px_1px" }}>
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
+            <img src="/logo-v1.png" alt="EasySSL" className="h-6 w-6 rounded" />
             <div className="text-base font-semibold tracking-[-0.02em] text-[#171717]">{t("layout.brand")}</div>
             <Badge variant="secondary">{t("layout.tagline")}</Badge>
           </div>
