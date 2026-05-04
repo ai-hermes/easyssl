@@ -20,7 +20,7 @@ import (
 // @description 2) Call POST /api/auth/api-keys to generate API key token (shown once).
 // @description 3) Call OpenAPI certificate apply endpoints with `X-API-Key: <token>`.
 // @description 4) Other business APIs support `Authorization: Bearer <token>` or `X-API-Key: <token>`.
-// @BasePath /api
+
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization

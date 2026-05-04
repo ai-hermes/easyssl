@@ -53,7 +53,7 @@ func scopedWhere(base string, userID, role string, argPos int) (string, []interf
 	return base + fmt.Sprintf(" AND owner_user_id=$%d", argPos), []interface{}{userID}, argPos + 1
 }
 
-func (r *Repository) CreateAdmin(ctx context.Context, email, passwordHash, role string) (*model.Admin, error) {
+func (r *Repository) CreateUser(ctx context.Context, email, passwordHash, role string) (*model.User, error) {
 	if role == "" {
 		role = model.RoleAdmin
 	}
@@ -63,11 +63,11 @@ func (r *Repository) CreateAdmin(ctx context.Context, email, passwordHash, role 
 	if err != nil {
 		return nil, err
 	}
-	return &model.Admin{ID: id, Email: email, Role: role, Status: "active", PasswordHash: passwordHash, CreatedAt: now, UpdatedAt: now}, nil
+	return &model.User{ID: id, Email: email, Role: role, Status: "active", PasswordHash: passwordHash, CreatedAt: now, UpdatedAt: now}, nil
 }
 
-func (r *Repository) GetAdminByEmail(ctx context.Context, email string) (*model.Admin, error) {
-	m := &model.Admin{}
+func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	m := &model.User{}
 	err := r.db.Pool.QueryRow(ctx, `SELECT id,email,role,status,password_hash,created_at,updated_at FROM admins WHERE email=$1`, email).
 		Scan(&m.ID, &m.Email, &m.Role, &m.Status, &m.PasswordHash, &m.CreatedAt, &m.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -76,8 +76,8 @@ func (r *Repository) GetAdminByEmail(ctx context.Context, email string) (*model.
 	return m, err
 }
 
-func (r *Repository) GetAdminByID(ctx context.Context, id string) (*model.Admin, error) {
-	m := &model.Admin{}
+func (r *Repository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
+	m := &model.User{}
 	err := r.db.Pool.QueryRow(ctx, `SELECT id,email,role,status,password_hash,created_at,updated_at FROM admins WHERE id=$1`, id).
 		Scan(&m.ID, &m.Email, &m.Role, &m.Status, &m.PasswordHash, &m.CreatedAt, &m.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -86,8 +86,30 @@ func (r *Repository) GetAdminByID(ctx context.Context, id string) (*model.Admin,
 	return m, err
 }
 
-func (r *Repository) UpdateAdminPassword(ctx context.Context, id, passwordHash string) error {
+func (r *Repository) UpdateUserPassword(ctx context.Context, id, passwordHash string) error {
 	_, err := r.db.Pool.Exec(ctx, `UPDATE admins SET password_hash=$2,updated_at=$3 WHERE id=$1`, id, passwordHash, time.Now())
+	return err
+}
+
+func (r *Repository) ListUsers(ctx context.Context) ([]model.User, error) {
+	rows, err := r.db.Pool.Query(ctx, `SELECT id,email,role,status,password_hash,created_at,updated_at FROM admins ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := make([]model.User, 0)
+	for rows.Next() {
+		var m model.User
+		if err := rows.Scan(&m.ID, &m.Email, &m.Role, &m.Status, &m.PasswordHash, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, m)
+	}
+	return items, rows.Err()
+}
+
+func (r *Repository) UpdateUserStatus(ctx context.Context, id, status string) error {
+	_, err := r.db.Pool.Exec(ctx, `UPDATE admins SET status=$2,updated_at=$3 WHERE id=$1`, id, status, time.Now())
 	return err
 }
 
@@ -488,8 +510,10 @@ func (r *Repository) ListWorkflowRunEventsForUser(ctx context.Context, runID, us
 }
 
 func (r *Repository) ListCertificatesForUser(ctx context.Context, userID, role string, limit int) ([]model.Certificate, error) {
-	query, extraArgs, argPos := scopedWhere(`SELECT id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at FROM certificates WHERE 1=1`, userID, role, 1)
-	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT $%d`, argPos)
+	// Deduplicate by workflow_id: only return the latest certificate per workflow
+	query, extraArgs, argPos := scopedWhere(`SELECT id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at FROM (SELECT DISTINCT ON (workflow_id) id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at FROM certificates WHERE 1=1`, userID, role, 1)
+	query += ` ORDER BY workflow_id, created_at DESC) t ORDER BY created_at DESC`
+	query += fmt.Sprintf(` LIMIT $%d`, argPos)
 	args := append(extraArgs, limit)
 
 	rows, err := r.db.Pool.Query(ctx, query, args...)
@@ -552,6 +576,10 @@ func (r *Repository) SaveCertificate(ctx context.Context, in model.Certificate) 
 		in.ID = uuid.NewString()
 		in.CreatedAt = now
 		in.UpdatedAt = now
+		// Delete old certificates for the same workflow to keep only the latest one
+		if in.WorkflowID != "" {
+			_, _ = r.db.Pool.Exec(ctx, `DELETE FROM certificates WHERE workflow_id=$1 AND is_revoked=false`, in.WorkflowID)
+		}
 		_, err := r.db.Pool.Exec(ctx, `INSERT INTO certificates(id,owner_user_id,source,subject_alt_names,serial_number,certificate,private_key,issuer_org,key_algorithm,validity_not_after,is_revoked,workflow_id,workflow_run_id,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`, in.ID, in.OwnerUserID, in.Source, in.SubjectAltNames, in.SerialNumber, in.Certificate, in.PrivateKey, in.IssuerOrg, in.KeyAlgorithm, in.ValidityNotAfter, in.IsRevoked, in.WorkflowID, in.WorkflowRunID, now, now)
 		if err != nil {
 			return nil, err

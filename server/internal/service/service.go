@@ -34,8 +34,8 @@ func New(repo *repository.Repository, jwtSecret string, dispatcher *wf.Dispatche
 	return &Service{repo: repo, jwtSecret: jwtSecret, dispatcher: dispatcher}
 }
 
-func (s *Service) EnsureBootstrapAdmin(ctx context.Context, email, password string) error {
-	_, err := s.repo.GetAdminByEmail(ctx, email)
+func (s *Service) EnsureBootstrapUser(ctx context.Context, email, password string) error {
+	_, err := s.repo.GetUserByEmail(ctx, email)
 	if err == nil {
 		return nil
 	}
@@ -46,30 +46,30 @@ func (s *Service) EnsureBootstrapAdmin(ctx context.Context, email, password stri
 	if err != nil {
 		return err
 	}
-	_, err = s.repo.CreateAdmin(ctx, email, string(h), model.RoleAdmin)
+	_, err = s.repo.CreateUser(ctx, email, string(h), model.RoleAdmin)
 	return err
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (string, *model.Admin, error) {
-	admin, err := s.repo.GetAdminByEmail(ctx, email)
+func (s *Service) Login(ctx context.Context, email, password string) (string, *model.User, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", nil, err
 	}
-	if admin.Status != "active" {
+	if user.Status != "active" {
 		return "", nil, errors.New("account is disabled")
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(admin.PasswordHash), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return "", nil, errors.New("invalid credentials")
 	}
-	tk, err := middleware.Sign(s.jwtSecret, admin.ID, admin.Role)
+	tk, err := middleware.Sign(s.jwtSecret, user.ID, user.Role)
 	if err != nil {
 		return "", nil, err
 	}
-	return tk, admin, nil
+	return tk, user, nil
 }
 
-func (s *Service) Me(ctx context.Context, userID string) (*model.Admin, error) {
-	return s.repo.GetAdminByID(ctx, userID)
+func (s *Service) Me(ctx context.Context, userID string) (*model.User, error) {
+	return s.repo.GetUserByID(ctx, userID)
 }
 
 func (s *Service) ChangePassword(ctx context.Context, userID, password string) error {
@@ -77,7 +77,30 @@ func (s *Service) ChangePassword(ctx context.Context, userID, password string) e
 	if err != nil {
 		return err
 	}
-	return s.repo.UpdateAdminPassword(ctx, userID, string(h))
+	return s.repo.UpdateUserPassword(ctx, userID, string(h))
+}
+
+func (s *Service) Register(ctx context.Context, email, password string) (*model.User, error) {
+	_, err := s.repo.GetUserByEmail(ctx, email)
+	if err == nil {
+		return nil, errors.New("email already registered")
+	}
+	if !errors.Is(err, repository.ErrNotFound) {
+		return nil, err
+	}
+	h, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.CreateUser(ctx, email, string(h), model.RoleUser)
+}
+
+func (s *Service) ListUsers(ctx context.Context) ([]model.User, error) {
+	return s.repo.ListUsers(ctx)
+}
+
+func (s *Service) UpdateUserStatus(ctx context.Context, id, status string) error {
+	return s.repo.UpdateUserStatus(ctx, id, status)
 }
 
 func apiKeyHash(secret, raw string) string {
@@ -119,7 +142,7 @@ func (s *Service) VerifyAPIKey(ctx context.Context, rawKey string) (*model.AuthC
 	if subtle.ConstantTimeCompare([]byte(hashed), []byte(stored.KeyHash)) != 1 {
 		return nil, errors.New("invalid api key")
 	}
-	user, err := s.repo.GetAdminByID(ctx, stored.UserID)
+	user, err := s.repo.GetUserByID(ctx, stored.UserID)
 	if err != nil {
 		return nil, err
 	}

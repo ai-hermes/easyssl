@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { formatTime } from "@/lib/time";
 
 export default function CertificatesPage() {
   const qc = useQueryClient();
@@ -34,7 +35,7 @@ export default function CertificatesPage() {
               <TableRow key={c.id}>
                 <TableCell>{c.subjectAltNames}</TableCell>
                 <TableCell>{c.keyAlgorithm || "-"}</TableCell>
-                <TableCell>{c.validityNotAfter ? new Date(c.validityNotAfter).toLocaleString() : "-"}</TableCell>
+                <TableCell>{c.validityNotAfter ? formatTime(c.validityNotAfter) : "-"}</TableCell>
                 <TableCell>
                   <StatusBadge status={c.isRevoked ? "failed" : "succeeded"} className="min-w-[56px] justify-center" />
                 </TableCell>

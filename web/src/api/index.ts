@@ -1,9 +1,10 @@
 import { request } from "./client";
-import type { APIKeyItem, Access, Certificate, ProviderDefinition, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
+import type { APIKeyItem, Access, Certificate, ProviderDefinition, User, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
 
 export const api = {
-  login: (email: string, password: string) => request<{ token: string; admin: { id: string; email: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
-  me: () => request<{ id: string; email: string }>("/auth/me"),
+  login: (email: string, password: string) => request<{ token: string; user: { id: string; email: string; role: string; status: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  register: (email: string, password: string) => request<{ id: string; email: string; role: string; status: string }>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
+  me: () => request<{ id: string; email: string; role: string; status: string }>("/auth/me"),
   changePassword: (password: string) => request<{}>("/auth/password", { method: "PUT", body: JSON.stringify({ password }) }),
   createAPIKey: (payload: { name: string; expiresAt?: string }) =>
     request<{ id: string; name: string; prefix: string; status: string; expiresAt?: string; createdAt: string; token: string }>("/auth/api-keys", {
@@ -48,4 +49,7 @@ export const api = {
 
   statistics: () => request<{ certificateTotal: number; certificateExpiringSoon: number; certificateExpired: number; workflowTotal: number; workflowEnabled: number; workflowDisabled: number }>("/statistics"),
   testNotification: (provider: string, accessId: string) => request<{ sentAt: string }>("/notifications/test", { method: "POST", body: JSON.stringify({ provider, accessId }) }),
+
+  listUsers: () => request<{ items: User[]; totalItems: number }>("/admin/users"),
+  updateUserStatus: (id: string, status: string) => request<{}>(`/admin/users/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) }),
 };

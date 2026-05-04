@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 concurrency:
@@ -34,6 +36,8 @@ jobs:
               - "server/**"
               - ".env.example"
               - "docker-compose.yml"
+              - "docker-compose.prod.yml"
+              - "Dockerfile"
               - ".github/workflows/**"
             web:
               - "web/**"
@@ -139,15 +143,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build web app
-        run: npm run build
+        run: pnpm run build

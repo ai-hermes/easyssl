@@ -40,3 +40,5 @@ web/.agents/
 .tmp/
 certimate
 *.tsbuildinfo
+server/api
+LOGO_PROMPTS.md

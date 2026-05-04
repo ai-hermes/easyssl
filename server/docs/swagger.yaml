@@ -1,14 +1,9 @@
-basePath: /api
 definitions:
   model.Access:
     properties:
       config:
-        type: object
-        description: Provider-specific configuration. Fields depend on the selected provider. Call GET /providers?kind=access to see available fields for each provider.
         additionalProperties: true
-        example:
-          accessKeyId: your-access-key-id
-          accessKeySecret: your-access-key-secret
+        type: object
       createdAt:
         type: string
       deleted:
@@ -79,6 +74,17 @@ definitions:
       provider:
         type: string
     type: object
+  model.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
   model.StartWorkflowRunRequest:
     properties:
       trigger:
@@ -147,8 +153,9 @@ info:
   title: EasySSL API
   version: "1.0"
 paths:
-  /accesses:
+  /api/accesses:
     get:
+      description: List all access credentials configured by the current user.
       produces:
       - application/json
       responses:
@@ -165,6 +172,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Create a new access credential or update an existing one.
       parameters:
       - description: access
         in: body
@@ -185,8 +193,9 @@ paths:
       summary: Create or update access
       tags:
       - Access
-  /accesses/{id}:
+  /api/accesses/{id}:
     delete:
+      description: Soft delete an access credential.
       parameters:
       - description: Access id
         in: path
@@ -209,6 +218,7 @@ paths:
     put:
       consumes:
       - application/json
+      description: Create a new access credential or update an existing one.
       parameters:
       - description: Access id
         in: path
@@ -233,8 +243,9 @@ paths:
       summary: Create or update access
       tags:
       - Access
-  /accesses/{id}/test:
+  /api/accesses/{id}/test:
     post:
+      description: Test the connectivity and validity of an access credential.
       parameters:
       - description: Access id
         in: path
@@ -254,8 +265,57 @@ paths:
       summary: Test access
       tags:
       - Access
-  /auth/api-keys:
+  /api/admin/users:
     get:
+      description: List all registered users. Requires admin role.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List all users (admin only)
+      tags:
+      - User
+  /api/admin/users/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Enable or disable a user account. Requires admin role.
+      parameters:
+      - description: User id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: '{status}'
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Update user status (admin only)
+      tags:
+      - User
+  /api/auth/api-keys:
+    get:
+      description: List all API keys created by the current user.
       produces:
       - application/json
       responses:
@@ -272,6 +332,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Create a new API key for programmatic access via X-API-Key header.
       parameters:
       - description: name/expiresAt
         in: body
@@ -292,8 +353,9 @@ paths:
       summary: Create API key
       tags:
       - APIKey
-  /auth/api-keys/{id}:
+  /api/auth/api-keys/{id}:
     delete:
+      description: Revoke an existing API key to disable its access.
       parameters:
       - description: API key id
         in: path
@@ -313,10 +375,11 @@ paths:
       summary: Revoke API key
       tags:
       - APIKey
-  /auth/login:
+  /api/auth/login:
     post:
       consumes:
       - application/json
+      description: Authenticate with email and password to obtain a JWT token.
       parameters:
       - description: email/password
         in: body
@@ -334,8 +397,9 @@ paths:
       summary: User login
       tags:
       - Auth
-  /auth/me:
+  /api/auth/me:
     get:
+      description: Get the current authenticated user's profile information.
       produces:
       - application/json
       responses:
@@ -349,10 +413,12 @@ paths:
       summary: Current user
       tags:
       - Auth
-  /auth/password:
+  /api/auth/password:
     put:
       consumes:
       - application/json
+      description: Update the password for the current user. Takes effect on next
+        login.
       parameters:
       - description: new password
         in: body
@@ -373,8 +439,31 @@ paths:
       summary: Change user password
       tags:
       - Auth
-  /certificates:
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with email and password.
+      parameters:
+      - description: email/password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      summary: User registration
+      tags:
+      - Auth
+  /api/certificates:
     get:
+      description: List all certificates managed by the current user.
       produces:
       - application/json
       responses:
@@ -388,10 +477,11 @@ paths:
       summary: List certificates
       tags:
       - Certificate
-  /certificates/{id}/download:
+  /api/certificates/{id}/download:
     post:
       consumes:
       - application/json
+      description: Download a certificate in the specified format (PEM, PFX, JKS).
       parameters:
       - description: Certificate id
         in: path
@@ -416,8 +506,9 @@ paths:
       summary: Download certificate
       tags:
       - Certificate
-  /certificates/{id}/revoke:
+  /api/certificates/{id}/revoke:
     post:
+      description: Revoke a certificate to mark it as invalid.
       parameters:
       - description: Certificate id
         in: path
@@ -437,10 +528,11 @@ paths:
       summary: Revoke certificate
       tags:
       - Certificate
-  /notifications/test:
+  /api/notifications/test:
     post:
       consumes:
       - application/json
+      description: Send a test notification using the specified provider and access.
       parameters:
       - description: provider/accessId
         in: body
@@ -461,83 +553,10 @@ paths:
       summary: Test notification
       tags:
       - Notification
-  /open/certificates/apply:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: certificate apply request
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.OpenApplyCertificateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/util.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Apply certificate via OpenAPI
-      tags:
-      - OpenAPI
-  /open/certificates/runs/{runId}:
+  /api/providers:
     get:
-      parameters:
-      - description: Run id
-        in: path
-        name: runId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/util.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Get OpenAPI certificate apply run
-      tags:
-      - OpenAPI
-  /open/certificates/runs/{runId}/events:
-    get:
-      parameters:
-      - description: Run id
-        in: path
-        name: runId
-        required: true
-        type: string
-      - description: Node id
-        in: query
-        name: nodeId
-        type: string
-      - description: RFC3339 timestamp
-        in: query
-        name: since
-        type: string
-      - description: Limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/util.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: List OpenAPI certificate apply run events
-      tags:
-      - OpenAPI
-  /providers:
-    get:
+      description: List all available provider definitions for DNS, access, and deploy
+        operations.
       parameters:
       - description: 'provider kind: access, dns, deploy'
         in: query
@@ -556,8 +575,9 @@ paths:
       summary: List provider definitions
       tags:
       - Providers
-  /statistics:
+  /api/statistics:
     get:
+      description: Get dashboard statistics including certificate and workflow counts.
       produces:
       - application/json
       responses:
@@ -571,8 +591,9 @@ paths:
       summary: Dashboard statistics
       tags:
       - Statistics
-  /workflows:
+  /api/workflows:
     get:
+      description: List all workflows owned by the current user.
       produces:
       - application/json
       responses:
@@ -589,6 +610,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Create a new workflow or update an existing workflow definition.
       parameters:
       - description: workflow
         in: body
@@ -609,8 +631,9 @@ paths:
       summary: Create or update workflow
       tags:
       - Workflow
-  /workflows/{id}:
+  /api/workflows/{id}:
     delete:
+      description: Delete a workflow and all its associated data.
       parameters:
       - description: Workflow id
         in: path
@@ -631,6 +654,7 @@ paths:
       tags:
       - Workflow
     get:
+      description: Get detailed information of a specific workflow.
       parameters:
       - description: Workflow id
         in: path
@@ -653,6 +677,7 @@ paths:
     put:
       consumes:
       - application/json
+      description: Create a new workflow or update an existing workflow definition.
       parameters:
       - description: Workflow id
         in: path
@@ -677,8 +702,9 @@ paths:
       summary: Create or update workflow
       tags:
       - Workflow
-  /workflows/{id}/runs:
+  /api/workflows/{id}/runs:
     get:
+      description: List execution runs for a specific workflow.
       parameters:
       - description: Workflow id
         in: path
@@ -701,6 +727,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Manually trigger a workflow execution.
       parameters:
       - description: Workflow id
         in: path
@@ -725,8 +752,9 @@ paths:
       summary: Start workflow run
       tags:
       - Workflow
-  /workflows/{id}/runs/{runId}/cancel:
+  /api/workflows/{id}/runs/{runId}/cancel:
     post:
+      description: Cancel a running or pending workflow execution.
       parameters:
       - description: Workflow id
         in: path
@@ -751,8 +779,9 @@ paths:
       summary: Cancel workflow run
       tags:
       - Workflow
-  /workflows/{id}/runs/{runId}/events:
+  /api/workflows/{id}/runs/{runId}/events:
     get:
+      description: List event logs for a workflow run, optionally filtered by node.
       parameters:
       - description: Workflow id
         in: path
@@ -789,8 +818,9 @@ paths:
       summary: List workflow run events
       tags:
       - Workflow
-  /workflows/{id}/runs/{runId}/nodes:
+  /api/workflows/{id}/runs/{runId}/nodes:
     get:
+      description: List all node execution records for a workflow run.
       parameters:
       - description: Workflow id
         in: path
@@ -815,8 +845,10 @@ paths:
       summary: List workflow run nodes
       tags:
       - Workflow
-  /workflows/stats:
+  /api/workflows/stats:
     get:
+      description: Get real-time workflow dispatcher statistics including concurrency
+        and queue status.
       produces:
       - application/json
       responses:
@@ -830,6 +862,146 @@ paths:
       summary: Workflow dispatcher stats
       tags:
       - Workflow
+  /openapi/accesses:
+    get:
+      description: List all access credentials configured by the current user via
+        OpenAPI.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List accesses (OpenAPI)
+      tags:
+      - OpenAPI
+  /openapi/certificates:
+    get:
+      description: List all certificates managed by the current user via OpenAPI.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List certificates (OpenAPI)
+      tags:
+      - OpenAPI
+  /openapi/certificates/{id}/download:
+    post:
+      consumes:
+      - application/json
+      description: Download a certificate in the specified format (PEM, PFX, JKS)
+        via OpenAPI.
+      parameters:
+      - description: Certificate id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: format
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/model.DownloadCertificateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Download certificate (OpenAPI)
+      tags:
+      - OpenAPI
+  /openapi/certificates/apply:
+    post:
+      consumes:
+      - application/json
+      description: Apply for an SSL certificate using the OpenAPI endpoint with API
+        key authentication.
+      parameters:
+      - description: certificate apply request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.OpenApplyCertificateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Apply certificate via OpenAPI
+      tags:
+      - OpenAPI
+  /openapi/certificates/runs/{runId}:
+    get:
+      description: Get the status and result of a certificate apply run triggered
+        via OpenAPI.
+      parameters:
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get OpenAPI certificate apply run
+      tags:
+      - OpenAPI
+  /openapi/certificates/runs/{runId}/events:
+    get:
+      description: List execution events for a certificate apply run.
+      parameters:
+      - description: Run id
+        in: path
+        name: runId
+        required: true
+        type: string
+      - description: Node id
+        in: query
+        name: nodeId
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: since
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List OpenAPI certificate apply run events
+      tags:
+      - OpenAPI
 securityDefinitions:
   ApiKeyAuth:
     in: header

@@ -1,0 +1,199 @@
+name: Deploy to Tencent Cloud
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.0.0). Leave empty to use git SHA.'
+        required: false
+        default: ''
+
+env:
+  IMAGE_NAME: easyssl
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            TAG="${{ inputs.version }}"
+          else
+            TAG="sha-$(git rev-parse --short HEAD)"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Image tag: $TAG"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - name: Decode SSH key
+        id: ssh-key
+        run: |
+          {
+            echo 'key<<EOF'
+            echo '${{ secrets.TENCENT_CLOUD_SSH_KEY }}' | base64 -d
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.TENCENT_CLOUD_HOST }}
+          username: ${{ secrets.TENCENT_CLOUD_USER }}
+          key: ${{ steps.ssh-key.outputs.key }}
+          script_stop: true
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            APP_DIR="/home/tiger/deploy/easyssl"
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+
+            # Ensure .env exists (user must create it manually on first setup)
+            if [ ! -f .env ]; then
+              echo "⚠️  .env file not found at $APP_DIR/.env"
+              echo "Please create it before deploying. See DEPLOY.md for details."
+              exit 1
+            fi
+
+            # Write docker-compose.yml if not exists (idempotent)
+            if [ ! -f docker-compose.yml ]; then
+              cat > docker-compose.yml << 'EOF'
+            version: "3.9"
+            services:
+              api:
+                image: ${EASYSSL_IMAGE}
+                container_name: easyssl-api
+                restart: always
+                env_file:
+                  - .env
+                environment:
+                  LISTEN_ADDR: :8090
+                  PG_HOST: db
+                  PG_PORT: 5432
+                ports:
+                  - "8090:8090"
+                depends_on:
+                  db:
+                    condition: service_healthy
+                healthcheck:
+                  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/healthz"]
+                  interval: 10s
+                  timeout: 5s
+                  retries: 5
+                  start_period: 15s
+
+              db:
+                image: postgres:16
+                container_name: easyssl-db
+                restart: always
+                env_file:
+                  - .env
+                environment:
+                  POSTGRES_DB: ${PG_DATABASE:-easyssl}
+                  POSTGRES_USER: ${PG_USER:-postgres}
+                  POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+                volumes:
+                  - pgdata:/var/lib/postgresql/data
+                healthcheck:
+                  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+                  interval: 10s
+                  timeout: 5s
+                  retries: 5
+
+            volumes:
+              pgdata:
+                name: easyssl-pgdata
+            EOF
+            fi
+
+            # Export the target image
+            export EASYSSL_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
+
+            # Ensure Docker logout on exit so credentials are not left on disk
+            trap 'docker logout >/dev/null 2>&1 || true' EXIT
+
+            # Detect docker compose command (v2 plugin vs v1 binary)
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            elif docker-compose version >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            else
+              echo "❌ Docker Compose not found"
+              exit 1
+            fi
+
+            # Login to registry
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            # Pull new image and restart services
+            $COMPOSE pull api
+            $COMPOSE up -d
+
+            # Cleanup old dangling images and build cache
+            docker image prune -af --filter "until=168h" || true
+            docker builder prune -f || true
+
+            # Health check against the local API
+            echo "Waiting for API health check..."
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8090/healthz > /dev/null 2>&1; then
+                echo "✅ API is healthy!"
+                exit 0
+              fi
+              echo "Attempt $i/30..."
+              sleep 2
+            done
+
+            echo "❌ API health check failed"
+            exit 1
