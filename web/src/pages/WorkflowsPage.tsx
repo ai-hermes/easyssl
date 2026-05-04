@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactFlow, { Background, Controls, Edge, Handle, MarkerType, Node, NodeProps, NodeTypes, Position, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
@@ -80,12 +81,14 @@ const workflowNodeTypes: NodeTypes = {
   end: WorkflowPreviewNode,
 };
 
-const TEMPLATE_OPTIONS: Array<{ value: WorkflowTemplateKey; label: string }> = [
-  { value: "apply-only", label: "仅申请证书" },
-  { value: "apply-aliyun", label: "申请 + 部署到 Aliyun CAS" },
-  { value: "apply-qiniu", label: "申请 + 部署到 Qiniu" },
-  { value: "apply-ssh", label: "申请 + 部署到 SSH 主机" },
-];
+function getTemplateOptions(t: (key: string) => string): Array<{ value: WorkflowTemplateKey; label: string }> {
+  return [
+    { value: "apply-only", label: t("workflows.templates.applyOnly") },
+    { value: "apply-aliyun", label: t("workflows.templates.applyAliyun") },
+    { value: "apply-qiniu", label: t("workflows.templates.applyQiniu") },
+    { value: "apply-ssh", label: t("workflows.templates.applySSH") },
+  ];
+}
 
 function makeTemplateSpec(template: WorkflowTemplateKey): WorkflowSpec {
   const base: WorkflowSpec = {
@@ -314,19 +317,6 @@ function formatDateTime(v?: string) {
   return d.toLocaleString();
 }
 
-function formatDateTimeCN(v?: string) {
-  if (!v) return "-";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "-";
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${yyyy}年${mm}月${dd}日 ${hh}:${min}:${ss}`;
-}
-
 function nodeStatusColor(status?: string) {
   switch ((status || "").toLowerCase()) {
     case "running":
@@ -350,6 +340,7 @@ function isActiveRun(status?: string) {
 export default function WorkflowsPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const { t } = useTranslation();
   const { data } = useQuery({ queryKey: ["workflows"], queryFn: api.listWorkflows });
 
   const [editingID, setEditingID] = useState<string | undefined>(undefined);
@@ -373,9 +364,9 @@ export default function WorkflowsPage() {
     try {
       return { spec: readSpecFromText(specText), error: "" };
     } catch (e) {
-      return { spec: null, error: e instanceof Error ? e.message : "YAML 解析失败" };
+      return { spec: null, error: e instanceof Error ? e.message : t("workflows.yamlParseError") };
     }
-  }, [specText]);
+  }, [specText, t]);
 
   const selectedWorkflow = useMemo(() => (data?.items || []).find((x) => x.id === selectedWorkflowID), [data?.items, selectedWorkflowID]);
 
@@ -411,15 +402,15 @@ export default function WorkflowsPage() {
       const now = (run.status || "").toLowerCase();
       if (prev && prev !== now && (now === "succeeded" || now === "failed")) {
         if (now === "succeeded") {
-          toast.success(`Run ${run.id.slice(0, 8)} 执行成功`);
+          toast.success(t("workflows.runSuccess", { runId: run.id.slice(0, 8) }));
         } else {
-          toast.error(`Run ${run.id.slice(0, 8)} 执行失败`);
+          toast.error(t("workflows.runFailed", { runId: run.id.slice(0, 8) }));
         }
       }
       nextSeen[run.id] = now;
     });
     seenRunStatusRef.current = nextSeen;
-  }, [runsQuery.data?.items, toast]);
+  }, [runsQuery.data?.items, toast, t]);
 
   useEffect(() => {
     seenRunStatusRef.current = {};
@@ -518,7 +509,7 @@ export default function WorkflowsPage() {
   const save = useMutation({
     mutationFn: async () => {
       const spec = readSpecFromText(specText);
-      if (spec.nodes.length === 0) throw new Error("至少需要一个节点");
+      if (spec.nodes.length === 0) throw new Error(t("workflows.minOneNode"));
       const graph = specToGraph(spec);
       return api.saveWorkflow({
         id: editingID,
@@ -537,12 +528,12 @@ export default function WorkflowsPage() {
       setError("");
       setEditingID(saved.id);
       qc.invalidateQueries({ queryKey: ["workflows"] });
-      setRunNotice({ type: "success", text: "工作流已保存" });
-      toast.success("工作流保存成功");
+      setRunNotice({ type: "success", text: t("workflows.saveSuccess") });
+      toast.success(t("workflows.saveSuccess"));
       setDialogOpen(false);
     },
     onError: (e) => {
-      const msg = e instanceof Error ? e.message : "保存失败";
+      const msg = e instanceof Error ? e.message : t("common.saveFailed");
       setError(msg);
       toast.error(msg);
     },
@@ -552,11 +543,11 @@ export default function WorkflowsPage() {
     mutationFn: async (workflowID: string) => api.startWorkflowRun(workflowID),
     onMutate: (workflowID) => {
       setRunningWorkflowID(workflowID);
-      setRunNotice({ type: "info", text: "工作流已提交，正在启动..." });
-      toast.info("工作流已触发");
+      setRunNotice({ type: "info", text: t("workflows.submitting") });
+      toast.info(t("workflows.triggered"));
     },
     onSuccess: (res, workflowID) => {
-      setRunNotice({ type: "success", text: `已触发运行，Run ID: ${res.runId}` });
+      setRunNotice({ type: "success", text: t("workflows.runTriggered", { runId: res.runId }) });
       setSelectedWorkflowID(workflowID);
       setSelectedRunID("");
       setSelectedRunNodeID("");
@@ -567,7 +558,7 @@ export default function WorkflowsPage() {
       qc.invalidateQueries({ queryKey: ["workflow-run-events", workflowID, res.runId] });
     },
     onError: (e) => {
-      const msg = e instanceof Error ? e.message : "触发运行失败";
+      const msg = e instanceof Error ? e.message : t("workflows.triggerFailed");
       setRunNotice({ type: "error", text: msg });
       toast.error(msg);
     },
@@ -607,6 +598,7 @@ export default function WorkflowsPage() {
 
   const isEditing = Boolean(editingID);
   const selectedWorkflowName = selectedWorkflow?.name || "-";
+  const templateOptions = useMemo(() => getTemplateOptions(t), [t]);
 
   return (
     <div className="space-y-4">
@@ -615,23 +607,23 @@ export default function WorkflowsPage() {
       ) : null}
 
       <div className="flex justify-end">
-        <Button onClick={openCreate}>新增工作流</Button>
+        <Button onClick={openCreate}>{t("workflows.addWorkflow")}</Button>
       </div>
 
       <Card>
         <CardHeader className="pb-2">
           <div className="text-base font-semibold tracking-[-0.02em]">Workflows</div>
-          <div className="text-xs text-[#666]">默认仅展示工作流列表。</div>
+          <div className="text-xs text-[#666]">{t("workflows.listDescription")}</div>
         </CardHeader>
 
         <CardContent className="pt-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                <th className="px-2 pb-3 pt-1">名称</th>
-                <th className="px-2 pb-3 pt-1">最近运行</th>
-                <th className="px-2 pb-3 pt-1">最近时间</th>
-                <th className="px-2 pb-3 pt-1 text-right">动作</th>
+                <th className="px-2 pb-3 pt-1">{t("workflows.columns.name")}</th>
+                <th className="px-2 pb-3 pt-1">{t("workflows.columns.lastRun")}</th>
+                <th className="px-2 pb-3 pt-1">{t("workflows.columns.lastTime")}</th>
+                <th className="px-2 pb-3 pt-1 text-right">{t("workflows.columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -660,7 +652,7 @@ export default function WorkflowsPage() {
                           loadWorkflow(w);
                         }}
                       >
-                        编辑
+                        {t("common.edit")}
                       </Button>
                       <Button
                         size="sm"
@@ -670,7 +662,7 @@ export default function WorkflowsPage() {
                           startRun.mutate(w.id!);
                         }}
                       >
-                        {runningWorkflowID === w.id ? "触发中..." : "运行"}
+                        {runningWorkflowID === w.id ? t("common.triggering") : t("common.run")}
                       </Button>
                       <Button
                         size="sm"
@@ -685,10 +677,10 @@ export default function WorkflowsPage() {
                             setSelectedRunNodeID("");
                             setRunDrawerOpen(false);
                           }
-                          toast.info("工作流已删除");
+                          toast.info(t("workflows.deleteSuccess"));
                         }}
                       >
-                        删除
+                        {t("common.delete")}
                       </Button>
                     </td>
                   </tr>
@@ -702,17 +694,17 @@ export default function WorkflowsPage() {
       {selectedWorkflowID ? (
         <Card className="bg-[#f5f5f7]">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium">执行记录</div>
+            <div className="text-sm font-medium">{t("workflows.executionHistory")}</div>
             <span className="text-xs text-[#666]">{selectedWorkflowName}</span>
           </div>
           <div className="overflow-x-auto ds-scrollbar">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-[#808080]">
-                  <th className="px-2 pb-3 pt-1">Run ID</th>
-                  <th className="px-2 pb-3 pt-1">状态</th>
-                  <th className="px-2 pb-3 pt-1">开始</th>
-                  <th className="px-2 pb-3 pt-1">结束</th>
+                  <th className="px-2 pb-3 pt-1">{t("workflows.columns.runId")}</th>
+                  <th className="px-2 pb-3 pt-1">{t("workflows.columns.status")}</th>
+                  <th className="px-2 pb-3 pt-1">{t("workflows.columns.startedAt")}</th>
+                  <th className="px-2 pb-3 pt-1">{t("workflows.columns.endedAt")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -734,7 +726,7 @@ export default function WorkflowsPage() {
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-2 py-3 text-[#808080]" colSpan={4}>{runsQuery.isFetching ? "加载中..." : "暂无运行记录"}</td></tr>
+                  <tr><td className="px-2 py-3 text-[#808080]" colSpan={4}>{runsQuery.isFetching ? t("common.loading") : t("workflows.noRuns")}</td></tr>
                 )}
               </tbody>
             </table>
@@ -756,13 +748,13 @@ export default function WorkflowsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Dialog.Title className="text-sm font-semibold text-[#171717]">执行回显 {selectedRunID ? `(${selectedRunID.slice(0, 8)})` : ""}</Dialog.Title>
+                    <Dialog.Title className="text-sm font-semibold text-[#171717]">{t("workflows.executionEcho")} {selectedRunID ? `(${selectedRunID.slice(0, 8)})` : ""}</Dialog.Title>
                     {selectedRun ? <StatusBadge status={selectedRun.status} /> : null}
                   </div>
-                  <Dialog.Description className="mt-1 text-xs text-[#666]">点击节点可查看该节点执行日志</Dialog.Description>
+                  <Dialog.Description className="mt-1 text-xs text-[#666]">{t("workflows.clickNodeForLogs")}</Dialog.Description>
                 </div>
                 <div className="flex items-center">
-                  <Button size="sm" variant="outline" onClick={() => setRunDrawerOpen(false)}>关闭</Button>
+                  <Button size="sm" variant="outline" onClick={() => setRunDrawerOpen(false)}>{t("common.close")}</Button>
                 </div>
               </div>
             </div>
@@ -787,12 +779,12 @@ export default function WorkflowsPage() {
 
               {!selectedRunNodeID ? (
                 <div className="rounded-xl bg-white ds-card px-6 py-8 text-center text-sm text-[#666]">
-                  请先点击流程图中的节点查看该节点状态与执行日志。
+                  {t("workflows.selectNodePrompt")}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <div>
-                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#808080]">节点状态</div>
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#808080]">{t("workflows.nodeStatus")}</div>
                     <div className="rounded-xl bg-white ds-card p-5 text-sm">
                       {selectedNodeRun ? (
                         <div className="space-y-4">
@@ -802,7 +794,7 @@ export default function WorkflowsPage() {
                               <div className="mt-1 font-mono text-sm text-[#171717]">{selectedNodeRun.nodeId}</div>
                             </div>
                             <div>
-                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">状态</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.status")}</div>
                               <div className="mt-1"><StatusBadge status={selectedNodeRun.status} /></div>
                             </div>
                             <div>
@@ -812,34 +804,34 @@ export default function WorkflowsPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">开始时间</div>
-                              <div className="mt-1 text-sm text-[#171717]">{formatDateTimeCN(selectedNodeRun.startedAt)}</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.startTime")}</div>
+                              <div className="mt-1 text-sm text-[#171717]">{formatDateTime(selectedNodeRun.startedAt)}</div>
                             </div>
                             <div>
-                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">结束时间</div>
-                              <div className="mt-1 text-sm text-[#171717]">{formatDateTimeCN(selectedNodeRun.endedAt)}</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.endTime")}</div>
+                              <div className="mt-1 text-sm text-[#171717]">{formatDateTime(selectedNodeRun.endedAt)}</div>
                             </div>
                           </div>
                           {selectedNodeRun.error ? (
                             <div>
-                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">错误</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wider text-[#808080]">{t("workflows.error")}</div>
                               <div className="mt-1 text-sm text-[var(--ds-danger-fg)] break-all">{selectedNodeRun.error}</div>
                             </div>
                           ) : null}
                         </div>
                       ) : (
-                        <div className="text-sm text-[#808080]">该节点没有执行记录（可能是 start/end 节点或本次运行未执行到该节点）。</div>
+                        <div className="text-sm text-[#808080]">{t("workflows.noNodeRecords")}</div>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#808080]">事件日志 <span className="font-normal normal-case tracking-normal text-[#999]">(Node: {selectedRunNodeID})</span></div>
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#808080]">{t("workflows.eventLogs")} <span className="font-normal normal-case tracking-normal text-[#999]">(Node: {selectedRunNodeID})</span></div>
                     <div className="rounded-xl bg-white ds-card p-0 overflow-hidden">
                       <LogStream
                         items={runEventsQuery.data?.items || []}
                         loading={runEventsQuery.isFetching}
-                        emptyText={runEventsQuery.isFetching ? "加载中..." : "暂无日志"}
+                        emptyText={runEventsQuery.isFetching ? t("common.loading") : t("workflows.noLogs")}
                       />
                     </div>
                   </div>
@@ -857,12 +849,12 @@ export default function WorkflowsPage() {
             <div className="sticky top-0 z-10 border-b border-[#ececec] bg-white/95 px-5 py-4 backdrop-blur">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{isEditing ? "编辑工作流" : "新增工作流"}</Dialog.Title>
-                  <Dialog.Description className="text-sm text-[#666]">配置优先，流程图用于执行观测。</Dialog.Description>
+                  <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{isEditing ? t("workflows.editTitle") : t("workflows.createTitle")}</Dialog.Title>
+                  <Dialog.Description className="text-sm text-[#666]">{t("workflows.dialogDescription")}</Dialog.Description>
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={isEditing ? "processing" : "pending"} />
-                  <Button onClick={() => save.mutate()} disabled={save.isPending}>{isEditing ? "保存工作流" : "创建工作流"}</Button>
+                  <Button onClick={() => save.mutate()} disabled={save.isPending}>{isEditing ? t("workflows.saveWorkflow") : t("workflows.createWorkflow")}</Button>
                 </div>
               </div>
             </div>
@@ -870,47 +862,47 @@ export default function WorkflowsPage() {
             <div className="grid grid-cols-1 gap-4 p-5 xl:grid-cols-[1.15fr_0.85fr]">
               <div className="space-y-4">
                 <div className="rounded-lg border border-[#ececec] bg-[#fcfcfc] p-3">
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#808080]">基本信息</div>
+                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#808080]">{t("workflows.basicInfo")}</div>
                   <div className="grid gap-2 md:grid-cols-2">
-                    <Input placeholder="工作流名称" value={name} onChange={(e) => setName(e.target.value)} />
-                    <Input placeholder="描述" value={description} onChange={(e) => setDescription(e.target.value)} />
+                    <Input placeholder={t("workflows.namePlaceholder")} value={name} onChange={(e) => setName(e.target.value)} />
+                    <Input placeholder={t("workflows.descriptionPlaceholder")} value={description} onChange={(e) => setDescription(e.target.value)} />
                   </div>
                   {isEditing ? (
                     <div className="mt-2 text-xs text-[#777]">
-                      工作流 ID: <span className="font-mono">{editingID}</span>
+                      {t("workflows.workflowId")}: <span className="font-mono">{editingID}</span>
                     </div>
                   ) : null}
                 </div>
 
                 <div className="rounded-lg border border-[#ececec] p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="text-xs font-medium uppercase tracking-wide text-[#808080]">YAML 编排</div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-[#808080]">{t("workflows.yamlOrchestration")}</div>
                   </div>
                   {!isEditing ? (
                     <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <Button variant="outline" onClick={resetEditor}>新建模板</Button>
+                      <Button variant="outline" onClick={resetEditor}>{t("workflows.newTemplate")}</Button>
                       <select
                         className="ds-ring h-9 rounded-md bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
                         value={templateKey}
                         onChange={(e) => setTemplateKey(e.target.value as WorkflowTemplateKey)}
                       >
-                        {TEMPLATE_OPTIONS.map((item) => (
+                        {templateOptions.map((item) => (
                           <option key={item.value} value={item.value}>{item.label}</option>
                         ))}
                       </select>
-                      <Button variant="outline" onClick={applyTemplate}>套用模板</Button>
+                      <Button variant="outline" onClick={applyTemplate}>{t("workflows.applyTemplate")}</Button>
                     </div>
                   ) : null}
                   <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} className="min-h-[520px] font-mono text-xs" />
-                  {parsedSpec.error ? <div className="mt-2 rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">YAML 错误: {parsedSpec.error}</div> : null}
+                  {parsedSpec.error ? <div className="mt-2 rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{t("workflows.yamlError")}: {parsedSpec.error}</div> : null}
                   {error ? <div className="mt-2 rounded-md bg-[var(--ds-danger-bg)] px-3 py-2 text-sm text-[var(--ds-danger-fg)]">{error}</div> : null}
                 </div>
               </div>
 
               <div className="space-y-2 xl:sticky xl:top-[88px] xl:self-start">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">流程图预览</div>
-                  <span className="text-xs text-[#808080]">点击节点可联动运行日志筛选</span>
+                  <div className="text-sm font-medium">{t("workflows.flowPreview")}</div>
+                  <span className="text-xs text-[#808080]">{t("workflows.flowPreviewHint")}</span>
                 </div>
                 <div className="h-[680px] rounded-lg border border-[#ebebeb]">
                   <ReactFlow

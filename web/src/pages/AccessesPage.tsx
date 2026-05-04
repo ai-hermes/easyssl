@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
@@ -56,9 +57,9 @@ function updateConfig(config: Record<string, unknown>, field: ProviderField, val
   return next;
 }
 
-function renderField(field: ProviderField, value: unknown, editing: boolean, onChange: (value: unknown) => void) {
+function renderField(field: ProviderField, value: unknown, editing: boolean, onChange: (value: unknown) => void, t: (key: string) => string) {
   const label = `${field.label || field.name}${field.required ? " *" : ""}`;
-  const placeholder = field.placeholder || (field.secret && editing ? `${label}（留空表示不修改）` : label);
+  const placeholder = field.placeholder || (field.secret && editing ? `${label}${t("accesses.leaveBlankHint")}` : label);
   if (field.type === "checkbox") {
     return (
       <label key={field.name} className="ds-ring flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm text-[#171717]">
@@ -108,6 +109,7 @@ function renderField(field: ProviderField, value: unknown, editing: boolean, onC
 export default function AccessesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const { t } = useTranslation();
   const { data } = useQuery({ queryKey: ["accesses"], queryFn: api.listAccesses });
   const { data: providerData } = useQuery({ queryKey: ["providers", "access"], queryFn: () => api.listProviders("access") });
   const providers = providerData?.items ?? [];
@@ -135,11 +137,11 @@ export default function AccessesPage() {
       setForm(emptyForm(firstProvider));
       setDialogOpen(false);
       qc.invalidateQueries({ queryKey: ["accesses"] });
-      setNotice({ type: "success", text: "授权保存成功" });
-      toast.success("授权保存成功");
+      setNotice({ type: "success", text: t("accesses.saveSuccess") });
+      toast.success(t("accesses.saveSuccess"));
     },
     onError: (e) => {
-      const msg = e instanceof Error ? e.message : "保存失败";
+      const msg = e instanceof Error ? e.message : t("common.saveFailed");
       setNotice({ type: "error", text: msg });
       toast.error(msg);
     },
@@ -148,11 +150,11 @@ export default function AccessesPage() {
   const testAccess = useMutation({
     mutationFn: (id: string) => api.testAccess(id),
     onSuccess: () => {
-      setNotice({ type: "success", text: "授权测试成功" });
-      toast.success("授权测试成功");
+      setNotice({ type: "success", text: t("accesses.testSuccess") });
+      toast.success(t("accesses.testSuccess"));
     },
     onError: (e) => {
-      const msg = e instanceof Error ? e.message : "测试失败";
+      const msg = e instanceof Error ? e.message : t("accesses.testFailed");
       setNotice({ type: "error", text: msg });
       toast.error(msg);
     },
@@ -185,10 +187,10 @@ export default function AccessesPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-[#171717]">授权管理</h1>
-          <p className="mt-1 text-sm text-[#666]">管理 DNS、云厂商、主机与面板授权，可用于证书申请或部署。</p>
+          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-[#171717]">{t("accesses.title")}</h1>
+          <p className="mt-1 text-sm text-[#666]">{t("accesses.description")}</p>
         </div>
-        <Button onClick={openCreate}>新增授权</Button>
+        <Button onClick={openCreate}>{t("accesses.addAccess")}</Button>
       </div>
 
       {notice ? <div className={`rounded-md px-3 py-2 text-sm ${notice.type === "error" ? "bg-red-50 text-red-700" : notice.type === "success" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>{notice.text}</div> : null}
@@ -219,10 +221,10 @@ export default function AccessesPage() {
                     <td className="px-2 py-3">
                       <div className="flex justify-end gap-2">
                         <Button size="sm" variant="outline" disabled={testAccess.isPending} onClick={() => testAccess.mutate(x.id!)}>
-                          测试
+                          {t("common.test")}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => startEdit(x)}>
-                          编辑
+                          {t("common.edit")}
                         </Button>
                         <Button
                           size="sm"
@@ -230,10 +232,10 @@ export default function AccessesPage() {
                           onClick={async () => {
                             await api.deleteAccess(x.id!);
                             qc.invalidateQueries({ queryKey: ["accesses"] });
-                            toast.info("授权已删除");
+                            toast.info(t("accesses.deleteSuccess"));
                           }}
                         >
-                          删除
+                          {t("common.delete")}
                         </Button>
                       </div>
                     </td>
@@ -250,12 +252,12 @@ export default function AccessesPage() {
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[86vh] w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-white p-5 shadow-2xl focus:outline-none">
             <div className="mb-4">
-              <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{editing ? "编辑授权" : "新增授权"}</Dialog.Title>
-              <Dialog.Description className="text-sm text-[#666]">配置完成后可用于证书申请或部署节点。新增 provider 表单由后端元数据自动生成。</Dialog.Description>
+              <Dialog.Title className="text-lg font-semibold tracking-[-0.02em]">{editing ? t("accesses.editTitle") : t("accesses.createTitle")}</Dialog.Title>
+              <Dialog.Description className="text-sm text-[#666]">{t("accesses.dialogDescription")}</Dialog.Description>
             </div>
 
             <div className="grid gap-2 md:grid-cols-2">
-              <Input placeholder="授权名称" value={form.name} onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))} />
+              <Input placeholder={t("accesses.namePlaceholder")} value={form.name} onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))} />
               <select
                 className="ds-ring h-9 rounded-md bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)]"
                 value={form.provider}
@@ -269,7 +271,7 @@ export default function AccessesPage() {
               </select>
 
               {(selectedProvider?.accessFields ?? []).map((field) =>
-                renderField(field, readConfigValue(form.config, field), editing, (value) => setForm((current) => ({ ...current, config: updateConfig(current.config, field, value) }))),
+                renderField(field, readConfigValue(form.config, field), editing, (value) => setForm((current) => ({ ...current, config: updateConfig(current.config, field, value) })), t),
               )}
             </div>
 
@@ -280,10 +282,10 @@ export default function AccessesPage() {
 
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                取消
+                {t("common.cancel")}
               </Button>
               <Button disabled={save.isPending || providers.length === 0} onClick={() => save.mutate()}>
-                {editing ? "保存修改" : "新增授权"}
+                {editing ? t("common.saveChanges") : t("accesses.create")}
               </Button>
             </div>
           </Dialog.Content>

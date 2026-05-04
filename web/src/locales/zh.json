@@ -1,0 +1,233 @@
+{
+  "layout": {
+    "brand": "EasySSL",
+    "tagline": "Workflow SSL",
+    "nav": {
+      "dashboard": "仪表盘",
+      "accesses": "授权",
+      "workflows": "工作流",
+      "certificates": "证书",
+      "settings": "设置",
+      "docs": "文档"
+    },
+    "logout": "退出",
+    "subtitle": "清晰配置，实时执行反馈，节点状态可观测。"
+  },
+  "login": {
+    "title": "登录",
+    "email": "邮箱",
+    "password": "密码",
+    "submit": "登录",
+    "error": "邮箱或密码错误",
+    "description": "使用管理员账号进入证书自动化控制台。"
+  },
+  "common": {
+    "loading": "加载中…",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "confirm": "确认",
+    "close": "关闭",
+    "copy": "复制",
+    "copied": "已复制",
+    "search": "搜索",
+    "filter": "筛选",
+    "refresh": "刷新",
+    "noData": "暂无数据",
+    "unknownError": "未知错误",
+    "back": "返回",
+    "success": "成功",
+    "failed": "失败",
+    "test": "测试",
+    "saveChanges": "保存修改",
+    "saveFailed": "保存失败",
+    "download": "下载",
+    "revoke": "吊销",
+    "run": "运行",
+    "triggering": "触发中…",
+    "sessionExpired": "登录状态已过期，请重新登录",
+    "copyFailed": "当前浏览器不支持自动复制"
+  },
+  "dashboard": {
+    "totalCertificates": "证书总数",
+    "expiringSoon": "即将过期",
+    "expiringSoonHint": "未来 21 天内",
+    "expired": "已过期",
+    "totalWorkflows": "工作流总数",
+    "workflowHint": "启用 {{enabled}} / 停用 {{disabled}}",
+    "schedulerStatus": "调度器状态",
+    "schedulerDescription": "并发与队列状态实时反映调度压力",
+    "concurrency": "并发",
+    "pending": "等待",
+    "processing": "执行中",
+    "recentWorkflows": "最近工作流运行",
+    "columns": {
+      "workflow": "工作流",
+      "lastStatus": "最近状态",
+      "lastTime": "最近时间"
+    },
+    "noWorkflowData": "暂无工作流数据"
+  },
+  "accesses": {
+    "title": "授权管理",
+    "description": "管理 DNS、云厂商、主机与面板授权，可用于证书申请或部署。",
+    "addAccess": "新增授权",
+    "saveSuccess": "授权保存成功",
+    "testSuccess": "授权测试成功",
+    "testFailed": "测试失败",
+    "deleteSuccess": "授权已删除",
+    "editTitle": "编辑授权",
+    "createTitle": "新增授权",
+    "dialogDescription": "配置完成后可用于证书申请或部署节点。新增 provider 表单由后端元数据自动生成。",
+    "namePlaceholder": "授权名称",
+    "leaveBlankHint": "（留空表示不修改）",
+    "create": "新增授权"
+  },
+  "workflows": {
+    "templates": {
+      "applyOnly": "仅申请证书",
+      "applyAliyun": "申请 + 部署到 Aliyun CAS",
+      "applyQiniu": "申请 + 部署到 Qiniu",
+      "applySSH": "申请 + 部署到 SSH 主机"
+    },
+    "yamlParseError": "YAML 解析失败",
+    "minOneNode": "至少需要一个节点",
+    "saveSuccess": "工作流保存成功",
+    "submitting": "工作流已提交，正在启动…",
+    "triggered": "工作流已触发",
+    "runTriggered": "已触发运行，Run ID: {{runId}}",
+    "triggerFailed": "触发运行失败",
+    "addWorkflow": "新增工作流",
+    "listDescription": "默认仅展示工作流列表。",
+    "columns": {
+      "name": "名称",
+      "lastRun": "最近运行",
+      "lastTime": "最近时间",
+      "actions": "动作",
+      "runId": "Run ID",
+      "status": "状态",
+      "startedAt": "开始",
+      "endedAt": "结束"
+    },
+    "deleteSuccess": "工作流已删除",
+    "executionHistory": "执行记录",
+    "noRuns": "暂无运行记录",
+    "executionEcho": "执行回显",
+    "clickNodeForLogs": "点击节点可查看该节点执行日志",
+    "selectNodePrompt": "请先点击流程图中的节点查看该节点状态与执行日志。",
+    "nodeStatus": "节点状态",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "error": "错误",
+    "noNodeRecords": "该节点没有执行记录（可能是 start/end 节点或本次运行未执行到该节点）。",
+    "eventLogs": "事件日志",
+    "noLogs": "暂无日志",
+    "editTitle": "编辑工作流",
+    "createTitle": "新增工作流",
+    "dialogDescription": "配置优先，流程图用于执行观测。",
+    "saveWorkflow": "保存工作流",
+    "createWorkflow": "创建工作流",
+    "basicInfo": "基本信息",
+    "namePlaceholder": "工作流名称",
+    "descriptionPlaceholder": "描述",
+    "workflowId": "工作流 ID",
+    "yamlOrchestration": "YAML 编排",
+    "newTemplate": "新建模板",
+    "applyTemplate": "套用模板",
+    "flowPreview": "流程图预览",
+    "flowPreviewHint": "点击节点可联动运行日志筛选",
+    "yamlError": "YAML 错误",
+    "runSuccess": "Run {{runId}} 执行成功",
+    "runFailed": "Run {{runId}} 执行失败"
+  },
+  "certificates": {
+    "title": "证书列表",
+    "columns": {
+      "san": "SAN",
+      "algorithm": "算法",
+      "expiresAt": "到期时间",
+      "status": "状态",
+      "actions": "动作"
+    },
+    "downloadStarted": "证书文件已开始下载",
+    "revokeSuccess": "证书已吊销"
+  },
+  "docs": {
+    "title": "OpenAPI 文档",
+    "loading": "加载 OpenAPI 文档…",
+    "authMethods": "认证方式",
+    "parameters": "参数",
+    "responses": "响应",
+    "tryItOut": "在线调试",
+    "sendRequest": "发送请求",
+    "sending": "发送中…",
+    "requestBody": "请求体 (JSON)",
+    "resetExample": "重置示例",
+    "required": "必填",
+    "consumes": "Consumes",
+    "produces": "Produces",
+    "pageTitle": "{{title}} OpenAPI 文档",
+    "loadFailed": "加载失败：{{error}}",
+    "arrayItems": "数组项:",
+    "requestFailed": "请求失败"
+  },
+  "settings": {
+    "title": "设置",
+    "account": {
+      "title": "账户设置",
+      "desc": "修改管理员密码后，下次登录即生效。",
+      "newPassword": "新密码",
+      "update": "更新密码",
+      "success": "密码已更新",
+      "error": "更新失败"
+    },
+    "apiKey": {
+      "title": "API Key",
+      "desc": "先创建 API Key，再通过 X-API-Key 调用 OpenAPI 申请证书。",
+      "name": "Key 名称",
+      "namePlaceholder": "Key 名称（例如：ci-prod）",
+      "expiresAt": "过期时间",
+      "create": "创建 Key",
+      "newToken": "新创建的 Key（仅展示一次）",
+      "copy": "复制",
+      "revoke": "吊销",
+      "revoked": "已吊销",
+      "noKeys": "暂无 API Key",
+      "loadFailed": "加载 API Key 失败",
+      "createFailed": "创建 API Key 失败",
+      "enterName": "请先输入 Key 名称",
+      "copySuccess": "已复制 API Key",
+      "revokeFailed": "吊销失败",
+      "columns": {
+        "name": "名称",
+        "prefix": "前缀",
+        "status": "状态",
+        "expiresAt": "过期时间",
+        "lastUsed": "最后使用",
+        "createdAt": "创建时间",
+        "actions": "操作"
+      }
+    },
+    "example": {
+      "title": "OpenAPI 调用示例"
+    }
+  },
+  "app": {
+    "loadingDocs": "加载文档…"
+  },
+  "status": {
+    "pending": "排队中",
+    "processing": "运行中",
+    "running": "运行中",
+    "succeeded": "成功",
+    "failed": "失败",
+    "canceled": "已取消",
+    "skipped": "已跳过"
+  },
+  "logs": {
+    "empty": "暂无日志",
+    "loading": "加载中..."
+  }
+}

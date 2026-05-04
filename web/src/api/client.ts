@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import type { ApiResp } from "@/types";
 
 const API_BASE = "/api";
@@ -28,7 +29,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
-      throw new Error("登录状态已过期，请重新登录");
+      throw new Error(i18n.t("common.sessionExpired"));
     }
     throw new Error(data.msg);
   }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, ChevronDown, ChevronRight, Play, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +88,7 @@ function resolveRef(ref: string, defs: Record<string, Schema>): Schema | undefin
 }
 
 function SchemaViewer({ schema, defs, level = 0 }: { schema?: Schema; defs: Record<string, Schema>; level?: number }) {
+  const { t } = useTranslation();
   if (!schema) return <span className="text-xs text-[#999]">-</span>;
 
   let s = schema;
@@ -102,7 +104,7 @@ function SchemaViewer({ schema, defs, level = 0 }: { schema?: Schema; defs: Reco
             <div className="flex items-center gap-1.5">
               <code className="font-semibold text-[#171717]">{key}</code>
               <TypeTag schema={val} defs={defs} />
-              {s.required?.includes(key) && <Badge variant="destructive" className="h-4 text-[9px] px-1">必填</Badge>}
+              {s.required?.includes(key) && <Badge variant="destructive" className="h-4 text-[9px] px-1">{t("docs.required")}</Badge>}
               {val.description && <span className="text-[#999]">{val.description}</span>}
             </div>
             {(val.type === "object" || val.type === "array" || val.$ref) && (
@@ -119,7 +121,7 @@ function SchemaViewer({ schema, defs, level = 0 }: { schema?: Schema; defs: Reco
   if (s.type === "array" && s.items) {
     return (
       <div className={`${level > 0 ? "ml-3 border-l border-[#eaeaea] pl-2" : ""}`}>
-        <div className="text-xs text-[#999] mb-0.5">数组项:</div>
+        <div className="text-xs text-[#999] mb-0.5">{t("docs.arrayItems")}</div>
         <SchemaViewer schema={s.items} defs={defs} level={level + 1} />
       </div>
     );
@@ -237,6 +239,7 @@ function TryItOut({
   basePath: string;
   defs: Record<string, Schema>;
 }) {
+  const { t } = useTranslation();
   const [params, setParams] = useState<Record<string, string>>({});
   const [body, setBody] = useState("{}");
   const [loading, setLoading] = useState(false);
@@ -299,7 +302,7 @@ function TryItOut({
       }
       setResult({ status: resp.status, data });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "请求失败");
+      setError(e instanceof Error ? e.message : t("docs.requestFailed"));
     } finally {
       setLoading(false);
     }
@@ -312,12 +315,12 @@ function TryItOut({
       <Separator />
       <div className="flex items-center gap-2">
         <Play className="h-3.5 w-3.5 text-[#0068d6]" />
-        <span className="text-xs font-medium text-[#171717]">在线调试</span>
+        <span className="text-xs font-medium text-[#171717]">{t("docs.tryItOut")}</span>
       </div>
 
       {allParams.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-medium text-[#999]">参数</div>
+          <div className="text-xs font-medium text-[#999]">{t("docs.parameters")}</div>
           <div className="grid gap-2">
             {allParams.map((p) => (
               <div key={p.name} className="grid grid-cols-[120px_1fr] items-center gap-2">
@@ -341,7 +344,7 @@ function TryItOut({
       {bodyParam && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#999]">请求体 (JSON)</span>
+            <span className="text-xs font-medium text-[#999]">{t("docs.requestBody")}</span>
             <Button
               variant="ghost"
               size="sm"
@@ -354,7 +357,7 @@ function TryItOut({
                 }
               }}
             >
-              重置示例
+              {t("docs.resetExample")}
             </Button>
           </div>
           <Textarea
@@ -366,7 +369,7 @@ function TryItOut({
       )}
 
       <Button size="sm" onClick={send} disabled={loading} className="text-xs">
-        {loading ? "发送中…" : "发送请求"}
+        {loading ? t("docs.sending") : t("docs.sendRequest")}
       </Button>
 
       {error && (
@@ -403,6 +406,7 @@ function TryItOut({
 
 export default function DocsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [spec, setSpec] = useState<OpenAPISpec | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -415,9 +419,9 @@ export default function DocsPage() {
         return r.json();
       })
       .then((d) => setSpec(d))
-      .catch((e) => setError(e instanceof Error ? e.message : "加载失败"))
+      .catch((e) => setError(e instanceof Error ? e.message : t("common.unknownError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const grouped = useMemo(() => {
     if (!spec) return [] as Array<{ tag: string; items: Array<{ id: string; method: string; path: string; op: Operation }> }>;
@@ -438,15 +442,15 @@ export default function DocsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-[#666]">加载 OpenAPI 文档…</div>
+      <div className="flex h-screen items-center justify-center text-sm text-[#666]">{t("docs.loading")}</div>
     );
   }
 
   if (error || !spec) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 text-sm text-[#a01616]">
-        <p>加载失败：{error || "未知错误"}</p>
-        <Button variant="outline" onClick={() => navigate(-1)}>返回</Button>
+        <p>{t("docs.loadFailed", { error: error || t("common.unknownError") })}</p>
+        <Button variant="outline" onClick={() => navigate(-1)}>{t("common.back")}</Button>
       </div>
     );
   }
@@ -460,9 +464,9 @@ export default function DocsPage() {
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate("/settings")}>
               <ArrowLeft className="mr-1 h-4 w-4" />
-              返回
+              {t("common.back")}
             </Button>
-            <span className="text-base font-semibold text-[#171717]">{spec.info.title} OpenAPI 文档</span>
+            <span className="text-base font-semibold text-[#171717]">{t("docs.pageTitle", { title: spec.info.title })}</span>
             <Badge variant="secondary">v{spec.info.version}</Badge>
           </div>
         </div>
@@ -480,7 +484,7 @@ export default function DocsPage() {
         {spec.securityDefinitions && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">认证方式</CardTitle>
+              <CardTitle className="text-base">{t("docs.authMethods")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {Object.entries(spec.securityDefinitions).map(([key, def]) => (
@@ -519,27 +523,27 @@ export default function DocsPage() {
                       <div className="border-t border-[#f1f1f1] bg-[#fafafa] px-3 py-3 text-sm space-y-4">
                         {op.consumes && (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-[#999]">Consumes</span>
+                            <span className="text-xs font-medium text-[#999]">{t("docs.consumes")}</span>
                             <span className="text-xs text-[#666]">{op.consumes.join(", ")}</span>
                           </div>
                         )}
                         {op.produces && (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-[#999]">Produces</span>
+                            <span className="text-xs font-medium text-[#999]">{t("docs.produces")}</span>
                             <span className="text-xs text-[#666]">{op.produces.join(", ")}</span>
                           </div>
                         )}
 
                         {op.parameters && op.parameters.length > 0 && (
                           <div>
-                            <div className="mb-1.5 text-xs font-medium text-[#999]">参数</div>
+                            <div className="mb-1.5 text-xs font-medium text-[#999]">{t("docs.parameters")}</div>
                             <div className="rounded-md border border-[#eaeaea] bg-white divide-y divide-[#f1f1f1]">
                               {op.parameters.map((p, i) => (
                                 <div key={i} className="px-3 py-2">
                                   <div className="flex items-center gap-2 text-xs">
                                     <code className="min-w-[100px] font-semibold text-[#171717]">{p.name}</code>
                                     <Badge variant="outline" className="text-[10px]">{p.in}</Badge>
-                                    {p.required && <Badge variant="destructive" className="text-[10px]">必填</Badge>}
+                                    {p.required && <Badge variant="destructive" className="text-[10px]">{t("docs.required")}</Badge>}
                                     <TypeTag schema={p.schema} defs={defs} />
                                   </div>
                                   {p.description && <div className="mt-0.5 text-[11px] text-[#999]">{p.description}</div>}
@@ -555,7 +559,7 @@ export default function DocsPage() {
                         )}
 
                         <div>
-                          <div className="mb-1.5 text-xs font-medium text-[#999]">响应</div>
+                          <div className="mb-1.5 text-xs font-medium text-[#999]">{t("docs.responses")}</div>
                           <div className="rounded-md border border-[#eaeaea] bg-white divide-y divide-[#f1f1f1]">
                             {Object.entries(op.responses).map(([code, res]) => (
                               <div key={code} className="px-3 py-2">

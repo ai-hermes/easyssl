@@ -1,0 +1,233 @@
+{
+  "layout": {
+    "brand": "EasySSL",
+    "tagline": "Workflow SSL",
+    "nav": {
+      "dashboard": "Dashboard",
+      "accesses": "Accesses",
+      "workflows": "Workflows",
+      "certificates": "Certificates",
+      "settings": "Settings",
+      "docs": "Docs"
+    },
+    "logout": "Logout",
+    "subtitle": "Clear configuration, real-time execution feedback, observable node status."
+  },
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Login",
+    "error": "Invalid email or password",
+    "description": "Sign in with your admin account to access the certificate automation console."
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "noData": "No data",
+    "unknownError": "Unknown error",
+    "back": "Back",
+    "success": "Success",
+    "failed": "Failed",
+    "test": "Test",
+    "saveChanges": "Save Changes",
+    "saveFailed": "Save Failed",
+    "download": "Download",
+    "revoke": "Revoke",
+    "run": "Run",
+    "triggering": "Triggering…",
+    "sessionExpired": "Session expired, please log in again",
+    "copyFailed": "Browser does not support automatic copying"
+  },
+  "dashboard": {
+    "totalCertificates": "Total Certificates",
+    "expiringSoon": "Expiring Soon",
+    "expiringSoonHint": "Within 21 days",
+    "expired": "Expired",
+    "totalWorkflows": "Total Workflows",
+    "workflowHint": "Enabled {{enabled}} / Disabled {{disabled}}",
+    "schedulerStatus": "Scheduler Status",
+    "schedulerDescription": "Concurrency and queue status reflect scheduling pressure in real time.",
+    "concurrency": "Concurrency",
+    "pending": "Pending",
+    "processing": "Processing",
+    "recentWorkflows": "Recent Workflow Runs",
+    "columns": {
+      "workflow": "Workflow",
+      "lastStatus": "Last Status",
+      "lastTime": "Last Time"
+    },
+    "noWorkflowData": "No workflow data"
+  },
+  "accesses": {
+    "title": "Access Management",
+    "description": "Manage DNS, cloud, host, and panel credentials for certificate application or deployment.",
+    "addAccess": "Add Access",
+    "saveSuccess": "Access saved successfully",
+    "testSuccess": "Access test passed",
+    "testFailed": "Test failed",
+    "deleteSuccess": "Access deleted",
+    "editTitle": "Edit Access",
+    "createTitle": "Create Access",
+    "dialogDescription": "Configure for certificate application or deployment nodes. Provider forms are auto-generated from backend metadata.",
+    "namePlaceholder": "Access Name",
+    "leaveBlankHint": " (Leave blank to keep unchanged)",
+    "create": "Create Access"
+  },
+  "workflows": {
+    "templates": {
+      "applyOnly": "Apply certificate only",
+      "applyAliyun": "Apply + Deploy to Aliyun CAS",
+      "applyQiniu": "Apply + Deploy to Qiniu",
+      "applySSH": "Apply + Deploy to SSH host"
+    },
+    "yamlParseError": "YAML parse failed",
+    "minOneNode": "At least one node is required",
+    "saveSuccess": "Workflow saved successfully",
+    "submitting": "Workflow submitted, starting…",
+    "triggered": "Workflow triggered",
+    "runTriggered": "Run triggered, Run ID: {{runId}}",
+    "triggerFailed": "Failed to trigger run",
+    "addWorkflow": "Add Workflow",
+    "listDescription": "Workflow list display by default.",
+    "columns": {
+      "name": "Name",
+      "lastRun": "Last Run",
+      "lastTime": "Last Time",
+      "actions": "Actions",
+      "runId": "Run ID",
+      "status": "Status",
+      "startedAt": "Started",
+      "endedAt": "Ended"
+    },
+    "deleteSuccess": "Workflow deleted",
+    "executionHistory": "Execution History",
+    "noRuns": "No run records",
+    "executionEcho": "Execution Echo",
+    "clickNodeForLogs": "Click a node to view its execution logs",
+    "selectNodePrompt": "Please click a node in the flow chart to view its status and logs.",
+    "nodeStatus": "Node Status",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "error": "Error",
+    "noNodeRecords": "No execution records for this node (may be start/end node or not reached in this run).",
+    "eventLogs": "Event Logs",
+    "noLogs": "No logs",
+    "editTitle": "Edit Workflow",
+    "createTitle": "Create Workflow",
+    "dialogDescription": "Configuration first; flow chart is for execution observation.",
+    "saveWorkflow": "Save Workflow",
+    "createWorkflow": "Create Workflow",
+    "basicInfo": "Basic Info",
+    "namePlaceholder": "Workflow Name",
+    "descriptionPlaceholder": "Description",
+    "workflowId": "Workflow ID",
+    "yamlOrchestration": "YAML Orchestration",
+    "newTemplate": "New Template",
+    "applyTemplate": "Apply Template",
+    "flowPreview": "Flow Preview",
+    "flowPreviewHint": "Click nodes to filter run logs",
+    "yamlError": "YAML Error",
+    "runSuccess": "Run {{runId}} succeeded",
+    "runFailed": "Run {{runId}} failed"
+  },
+  "certificates": {
+    "title": "Certificate List",
+    "columns": {
+      "san": "SAN",
+      "algorithm": "Algorithm",
+      "expiresAt": "Expires At",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "downloadStarted": "Certificate download started",
+    "revokeSuccess": "Certificate revoked"
+  },
+  "docs": {
+    "title": "OpenAPI Docs",
+    "loading": "Loading OpenAPI docs…",
+    "authMethods": "Authentication",
+    "parameters": "Parameters",
+    "responses": "Responses",
+    "tryItOut": "Try it out",
+    "sendRequest": "Send Request",
+    "sending": "Sending…",
+    "requestBody": "Request Body (JSON)",
+    "resetExample": "Reset Example",
+    "required": "Required",
+    "consumes": "Consumes",
+    "produces": "Produces",
+    "pageTitle": "{{title}} OpenAPI Docs",
+    "loadFailed": "Load failed: {{error}}",
+    "arrayItems": "Array items:",
+    "requestFailed": "Request failed"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": {
+      "title": "Account Settings",
+      "desc": "Password changes take effect on next login.",
+      "newPassword": "New Password",
+      "update": "Update Password",
+      "success": "Password updated",
+      "error": "Update failed"
+    },
+    "apiKey": {
+      "title": "API Key",
+      "desc": "Create an API Key first, then call the OpenAPI to apply for certificates via X-API-Key.",
+      "name": "Key Name",
+      "namePlaceholder": "Key name (e.g. ci-prod)",
+      "expiresAt": "Expiration",
+      "create": "Create Key",
+      "newToken": "Newly created key (shown once only)",
+      "copy": "Copy",
+      "revoke": "Revoke",
+      "revoked": "Revoked",
+      "noKeys": "No API Keys",
+      "loadFailed": "Failed to load API Keys",
+      "createFailed": "Failed to create API Key",
+      "enterName": "Please enter a key name",
+      "copySuccess": "API Key copied",
+      "revokeFailed": "Revoke failed",
+      "columns": {
+        "name": "Name",
+        "prefix": "Prefix",
+        "status": "Status",
+        "expiresAt": "Expires At",
+        "lastUsed": "Last Used",
+        "createdAt": "Created At",
+        "actions": "Actions"
+      }
+    },
+    "example": {
+      "title": "OpenAPI Call Example"
+    }
+  },
+  "app": {
+    "loadingDocs": "Loading docs…"
+  },
+  "status": {
+    "pending": "Pending",
+    "processing": "Processing",
+    "running": "Running",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "canceled": "Canceled",
+    "skipped": "Skipped"
+  },
+  "logs": {
+    "empty": "No logs",
+    "loading": "Loading..."
+  }
+}
