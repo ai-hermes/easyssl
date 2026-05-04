@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { api } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,21 +52,7 @@ export default function SettingsPage() {
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
-  const [copiedExample, setCopiedExample] = useState(false);
 
-  const applyExample = useMemo(() => {
-    const key = revealedToken || "YOUR_API_KEY";
-    return `curl -X POST "http://127.0.0.1:8090/api/open/certificates/apply" \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: ${key}" \\
-  -d '{
-    "provider": "tencentcloud",
-    "accessId": "your-access-id",
-    "domains": ["ssl1.example.com", "*.example.com"],
-    "caProvider": "letsencrypt",
-    "keyAlgorithm": "RSA2048"
-  }'`;
-  }, [revealedToken]);
 
   async function loadAPIKeys() {
     setLoadingKeys(true);
@@ -232,48 +218,7 @@ export default function SettingsPage() {
             </TableBody>
           </Table>
 
-          <Separator className="bg-[#f1f1f1]" />
 
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-[#171717]">OpenAPI 调用示例</div>
-            <div className="group relative rounded-md bg-[#fafafa] p-3 shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              <Button
-                size={copiedExample ? "sm" : "icon"}
-                variant="outline"
-                aria-label={copiedExample ? "已复制" : "复制 curl 示例"}
-                title={copiedExample ? "已复制" : "复制 curl 示例"}
-                className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                onClick={async () => {
-                  try {
-                    await copyText(applyExample);
-                    setCopiedExample(true);
-                    toast.success("示例命令已复制");
-                    window.setTimeout(() => setCopiedExample(false), 1800);
-                  } catch (e) {
-                    const msg = e instanceof Error ? e.message : "复制失败";
-                    toast.error(msg);
-                  }
-                }}
-              >
-                {copiedExample ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                {copiedExample ? <span className="text-xs text-green-700">已复制</span> : null}
-              </Button>
-              <pre className="whitespace-pre-wrap break-all pr-20 font-mono text-xs text-[#171717]">{applyExample}</pre>
-            </div>
-            <div className="rounded-md bg-[#f8fbff] px-3 py-2 text-xs text-[#1f4d8f] shadow-[rgba(0,0,0,0.08)_0px_0px_0px_1px]">
-              Swagger 地址：<span className="font-mono">http://127.0.0.1:8090/swagger/index.html</span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  window.open("/swagger/index.html", "_blank");
-                }}
-              >
-                打开 Swagger
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

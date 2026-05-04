@@ -9,6 +9,7 @@ const items = [
   ["/workflows", "工作流"],
   ["/certificates", "证书"],
   ["/settings", "设置"],
+  ["/docs", "文档"],
 ] as const;
 
 export default function Layout() {
