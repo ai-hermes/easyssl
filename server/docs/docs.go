@@ -1192,6 +1192,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/openapi/accesses": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all access credentials configured by the current user via OpenAPI.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OpenAPI"
+                ],
+                "summary": "List accesses (OpenAPI)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/openapi/certificates": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all certificates managed by the current user via OpenAPI.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OpenAPI"
+                ],
+                "summary": "List certificates (OpenAPI)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/openapi/certificates/apply": {
             "post": {
                 "security": [
@@ -1305,6 +1355,51 @@ const docTemplate = `{
                         "description": "Limit",
                         "name": "limit",
                         "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/openapi/certificates/{id}/download": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Download a certificate in the specified format (PEM, PFX, JKS) via OpenAPI.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OpenAPI"
+                ],
+                "summary": "Download certificate (OpenAPI)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Certificate id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "format",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.DownloadCertificateRequest"
+                        }
                     }
                 ],
                 "responses": {

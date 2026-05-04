@@ -78,6 +78,9 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 
 	open := r.Group("/openapi")
 	open.Use(middleware.RequireAPIKeyAuth(svc))
+	open.GET("/accesses", h.OpenListAccesses)
+	open.GET("/certificates", h.OpenListCertificates)
+	open.POST("/certificates/:id/download", h.OpenDownloadCertificate)
 	open.POST("/certificates/apply", h.OpenApplyCertificate)
 	open.GET("/certificates/runs/:runId", h.GetOpenCertificateRun)
 	open.GET("/certificates/runs/:runId/events", h.ListOpenCertificateRunEvents)

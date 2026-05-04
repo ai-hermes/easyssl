@@ -292,6 +292,71 @@ func (h *Handler) ListOpenCertificateRunEvents(c *gin.Context) {
 	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
 }
 
+// OpenListAccesses godoc
+// @Summary List accesses (OpenAPI)
+// @Description List all access credentials configured by the current user via OpenAPI.
+// @Tags OpenAPI
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} util.Response
+// @Router /openapi/accesses [get]
+func (h *Handler) OpenListAccesses(c *gin.Context) {
+	items, err := h.svc.ListAccesses(c, h.auth(c))
+	if err != nil {
+		util.Err(c, 500, err.Error())
+		return
+	}
+	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
+}
+
+// OpenListCertificates godoc
+// @Summary List certificates (OpenAPI)
+// @Description List all certificates managed by the current user via OpenAPI.
+// @Tags OpenAPI
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} util.Response
+// @Router /openapi/certificates [get]
+func (h *Handler) OpenListCertificates(c *gin.Context) {
+	items, err := h.svc.ListCertificates(c, h.auth(c))
+	if err != nil {
+		util.Err(c, 500, err.Error())
+		return
+	}
+	util.OK(c, gin.H{"items": items, "totalItems": len(items)})
+}
+
+// OpenDownloadCertificate godoc
+// @Summary Download certificate (OpenAPI)
+// @Description Download a certificate in the specified format (PEM, PFX, JKS) via OpenAPI.
+// @Tags OpenAPI
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path string true "Certificate id"
+// @Param body body model.DownloadCertificateRequest false "format"
+// @Success 200 {object} util.Response
+// @Router /openapi/certificates/{id}/download [post]
+func (h *Handler) OpenDownloadCertificate(c *gin.Context) {
+	var req struct {
+		Format string `json:"format"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	if req.Format == "" {
+		req.Format = "PEM"
+	}
+	res, err := h.svc.DownloadCertificate(c, h.auth(c), c.Param("id"), req.Format)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			util.Err(c, 404, "not found")
+			return
+		}
+		util.Err(c, 500, err.Error())
+		return
+	}
+	util.OK(c, res)
+}
+
 // ListProviders godoc
 // @Summary List provider definitions
 // @Description List all available provider definitions for DNS, access, and deploy operations.

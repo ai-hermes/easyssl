@@ -862,6 +862,66 @@ paths:
       summary: Workflow dispatcher stats
       tags:
       - Workflow
+  /openapi/accesses:
+    get:
+      description: List all access credentials configured by the current user via
+        OpenAPI.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List accesses (OpenAPI)
+      tags:
+      - OpenAPI
+  /openapi/certificates:
+    get:
+      description: List all certificates managed by the current user via OpenAPI.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List certificates (OpenAPI)
+      tags:
+      - OpenAPI
+  /openapi/certificates/{id}/download:
+    post:
+      consumes:
+      - application/json
+      description: Download a certificate in the specified format (PEM, PFX, JKS)
+        via OpenAPI.
+      parameters:
+      - description: Certificate id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: format
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/model.DownloadCertificateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/util.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Download certificate (OpenAPI)
+      tags:
+      - OpenAPI
   /openapi/certificates/apply:
     post:
       consumes:
