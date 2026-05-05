@@ -128,7 +128,12 @@
       "name": "名称",
       "provider": "Provider",
       "config": "配置",
+      "testStatus": "测试状态",
       "actions": "操作"
+    },
+    "testStatus": {
+      "lastTested": "最近测试",
+      "notTested": "未测试"
     }
   },
   "workflows": {

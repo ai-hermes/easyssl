@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, Clock3, Loader2, Search } from "lucide-react";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatTime } from "@/lib/time";
 import type { Access, ProviderDefinition, ProviderField } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -298,16 +300,20 @@ export default function AccessesPage() {
 
   const testAccess = useMutation({
     mutationFn: (id: string) => api.testAccess(id),
+    onMutate: () => {
+      setNotice(null);
+    },
     onSuccess: () => {
-      setNotice({ type: "success", text: t("accesses.testSuccess") });
       toast.success(t("accesses.testSuccess"));
+      qc.invalidateQueries({ queryKey: ["accesses"] });
     },
     onError: (e) => {
       const msg = e instanceof Error ? e.message : t("accesses.testFailed");
-      setNotice({ type: "error", text: msg });
       toast.error(msg);
+      qc.invalidateQueries({ queryKey: ["accesses"] });
     },
   });
+  const testingAccessId = testAccess.isPending ? testAccess.variables : undefined;
 
   const openCreate = () => {
     setForm(emptyForm(firstProvider));
@@ -368,6 +374,7 @@ export default function AccessesPage() {
                 <th className="px-2 pb-3 pt-1">{t("accesses.columns.name")}</th>
                 <th className="px-2 pb-3 pt-1">{t("accesses.columns.provider")}</th>
                 <th className="px-2 pb-3 pt-1">{t("accesses.columns.config")}</th>
+                <th className="px-2 pb-3 pt-1">{t("accesses.columns.testStatus")}</th>
                 <th className="px-2 pb-3 pt-1 text-right">{t("accesses.columns.actions")}</th>
               </tr>
             </thead>
@@ -381,6 +388,27 @@ export default function AccessesPage() {
                     <td className="px-2 py-3 text-xs text-[#777]">
                       {Object.keys(x.config ?? {}).join(", ") || "-"}
                     </td>
+                    <td className="px-2 py-3 align-top">
+                      <div className="min-w-[176px]">
+                        {x.lastTestResult ? (
+                          <div className="inline-flex min-w-[176px] items-center justify-between gap-3 py-1">
+                            <StatusBadge status={x.lastTestResult} className="w-fit shrink-0 px-2 py-0 text-[11px] leading-5" />
+                            {x.lastTestedAt ? (
+                              <span className="flex min-w-0 items-center justify-end gap-1 text-[11px] text-[#666666] [font-variant-numeric:tabular-nums]">
+                                <Clock3 className="h-3 w-3 shrink-0 text-[#808080]" />
+                                <span className="truncate">{formatTime(x.lastTestedAt)}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="inline-flex min-w-[176px] items-center py-1">
+                            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#808080]">
+                              {t("accesses.testStatus.notTested")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-2 py-3">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -389,7 +417,14 @@ export default function AccessesPage() {
                           disabled={testAccess.isPending}
                           onClick={() => testAccess.mutate(x.id!)}
                         >
-                          {t("common.test")}
+                          {testingAccessId === x.id ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              {t("common.loading")}
+                            </>
+                          ) : (
+                            t("common.test")
+                          )}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => startEdit(x)}>
                           {t("common.edit")}

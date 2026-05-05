@@ -128,7 +128,12 @@
       "name": "Name",
       "provider": "Provider",
       "config": "Config",
+      "testStatus": "Test Status",
       "actions": "Actions"
+    },
+    "testStatus": {
+      "lastTested": "Last tested",
+      "notTested": "Not tested"
     }
   },
   "workflows": {
