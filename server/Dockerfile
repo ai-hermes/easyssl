@@ -10,8 +10,9 @@ COPY server/ ./
 
 ARG GIT_BRANCH=unknown
 ARG GIT_COMMIT=unknown
+ARG GIT_REPO_URL=
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags="-s -w -X easyssl/server/internal/version.Branch=${GIT_BRANCH} -X easyssl/server/internal/version.Commit=${GIT_COMMIT}" \
+    -ldflags="-s -w -X easyssl/server/internal/version.Branch=${GIT_BRANCH} -X easyssl/server/internal/version.Commit=${GIT_COMMIT} -X easyssl/server/internal/version.RepoURL=${GIT_REPO_URL}" \
     -o /out/api ./cmd/api && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/migrate ./cmd/migrate
 

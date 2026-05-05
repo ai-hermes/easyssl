@@ -52,5 +52,5 @@ export const api = {
 
   listUsers: () => request<{ items: User[]; totalItems: number }>("/admin/users"),
   updateUserStatus: (id: string, status: string) => request<{}>(`/admin/users/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) }),
-  version: () => request<{ version: string }>("/admin/version"),
+  version: () => request<{ version: string; commitUrl: string }>("/admin/version"),
 };
