@@ -23,6 +23,7 @@ jobs:
     outputs:
       server: ${{ steps.filter.outputs.server }}
       web: ${{ steps.filter.outputs.web }}
+      cli: ${{ steps.filter.outputs.cli }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,9 +40,16 @@ jobs:
               - "docker-compose.prod.yml"
               - "Dockerfile"
               - ".github/workflows/**"
+              - "go.work"
+              - "go.work.sum"
             web:
               - "web/**"
               - ".github/workflows/**"
+            cli:
+              - "cli/**"
+              - ".github/workflows/**"
+              - "go.work"
+              - "go.work.sum"
 
   server:
     name: Server CI
@@ -97,6 +105,11 @@ jobs:
           go build -o /tmp/easyssl-api ./cmd/api
           go build -o /tmp/easyssl-migrate ./cmd/migrate
 
+      - name: Build CLI binary
+        run: |
+          cd ../cli
+          go build -o /tmp/easyssl-cli ./cmd/easyssl
+
       - name: Apply database migrations
         run: /tmp/easyssl-migrate
 
@@ -131,6 +144,35 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  cli:
+    name: CLI CI
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+        working-directory: cli
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Run Go tests
+        run: go test ./...
+
+      - name: Build CLI binary
+        run: go build -o /tmp/easyssl-cli ./cmd/easyssl
 
   web:
     name: Web CI
