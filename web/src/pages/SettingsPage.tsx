@@ -54,7 +54,8 @@ export default function SettingsPage() {
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
   const [version, setVersion] = useState("");
-  const [commitUrl, setCommitUrl] = useState("");
+  const [versionDetail, setVersionDetail] = useState("");
+  const [versionUrl, setVersionUrl] = useState("");
   const isAdmin = getRole() === "admin";
 
   async function loadAPIKeys() {
@@ -75,7 +76,9 @@ export default function SettingsPage() {
     if (isAdmin) {
       api.version().then((res) => {
         setVersion(res.version);
-        setCommitUrl(res.commitUrl);
+        setVersionDetail(res.detail);
+        const url = res.tagUrl || res.branchUrl || res.commitUrl;
+        setVersionUrl(url);
       }).catch(() => {});
     }
   }, []);
@@ -115,17 +118,18 @@ export default function SettingsPage() {
           <div className="mt-auto border-t border-[#ebebeb] pt-3">
             <div className="flex items-center gap-1.5 text-xs text-[#666]">
               <GitBranch size={12} />
-              {commitUrl ? (
+              {versionUrl ? (
                 <a
-                  href={commitUrl}
+                  href={versionUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  title={versionDetail}
                   className="font-mono hover:text-[#171717] hover:underline"
                 >
                   {version}
                 </a>
               ) : (
-                <span className="font-mono">{version}</span>
+                <span className="font-mono" title={versionDetail}>{version}</span>
               )}
             </div>
           </div>
