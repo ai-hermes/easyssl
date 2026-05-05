@@ -29,15 +29,17 @@ type User struct {
 }
 
 type Access struct {
-	ID          string                 `json:"id"`
-	OwnerUserID string                 `json:"ownerUserId"`
-	Name        string                 `json:"name"`
-	Provider    string                 `json:"provider"`
-	Config      map[string]interface{} `json:"config"`
-	Reserve     string                 `json:"reserve,omitempty"`
-	DeletedAt   *time.Time             `json:"deleted,omitempty"`
-	CreatedAt   time.Time              `json:"createdAt"`
-	UpdatedAt   time.Time              `json:"updatedAt"`
+	ID             string                 `json:"id"`
+	OwnerUserID    string                 `json:"ownerUserId"`
+	Name           string                 `json:"name"`
+	Provider       string                 `json:"provider"`
+	Config         map[string]interface{} `json:"config"`
+	Reserve        string                 `json:"reserve,omitempty"`
+	LastTestedAt   *time.Time             `json:"lastTestedAt,omitempty"`
+	LastTestResult *string                `json:"lastTestResult,omitempty"`
+	DeletedAt      *time.Time             `json:"deleted,omitempty"`
+	CreatedAt      time.Time              `json:"createdAt"`
+	UpdatedAt      time.Time              `json:"updatedAt"`
 }
 
 type Certificate struct {

@@ -121,13 +121,19 @@
     "createTitle": "Create Access",
     "dialogDescription": "Configure for certificate application or deployment nodes. Provider forms are auto-generated from backend metadata.",
     "namePlaceholder": "Access Name",
+    "selectProvider": "Select Provider",
     "leaveBlankHint": " (Leave blank to keep unchanged)",
     "create": "Create Access",
     "columns": {
       "name": "Name",
       "provider": "Provider",
       "config": "Config",
+      "testStatus": "Test Status",
       "actions": "Actions"
+    },
+    "testStatus": {
+      "lastTested": "Last tested",
+      "notTested": "Not tested"
     }
   },
   "workflows": {

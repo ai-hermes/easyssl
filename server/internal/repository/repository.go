@@ -114,7 +114,7 @@ func (r *Repository) UpdateUserStatus(ctx context.Context, id, status string) er
 }
 
 func (r *Repository) ListAccessesForUser(ctx context.Context, userID, role string) ([]model.Access, error) {
-	query, extraArgs, _ := scopedWhere(`SELECT id,owner_user_id,name,provider,config,reserve,deleted_at,created_at,updated_at FROM accesses WHERE deleted_at IS NULL`, userID, role, 1)
+	query, extraArgs, _ := scopedWhere(`SELECT id,owner_user_id,name,provider,config,reserve,last_tested_at,last_test_result,deleted_at,created_at,updated_at FROM accesses WHERE deleted_at IS NULL`, userID, role, 1)
 	query += ` ORDER BY created_at DESC`
 	rows, err := r.db.Pool.Query(ctx, query, extraArgs...)
 	if err != nil {
@@ -126,7 +126,7 @@ func (r *Repository) ListAccessesForUser(ctx context.Context, userID, role strin
 	for rows.Next() {
 		var m model.Access
 		var raw []byte
-		if err := rows.Scan(&m.ID, &m.OwnerUserID, &m.Name, &m.Provider, &raw, &m.Reserve, &m.DeletedAt, &m.CreatedAt, &m.UpdatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.OwnerUserID, &m.Name, &m.Provider, &raw, &m.Reserve, &m.LastTestedAt, &m.LastTestResult, &m.DeletedAt, &m.CreatedAt, &m.UpdatedAt); err != nil {
 			return nil, err
 		}
 		if len(raw) > 0 {
@@ -140,8 +140,8 @@ func (r *Repository) ListAccessesForUser(ctx context.Context, userID, role strin
 func (r *Repository) GetAccessByID(ctx context.Context, id string) (*model.Access, error) {
 	m := &model.Access{}
 	var raw []byte
-	err := r.db.Pool.QueryRow(ctx, `SELECT id,owner_user_id,name,provider,config,reserve,deleted_at,created_at,updated_at FROM accesses WHERE id=$1 AND deleted_at IS NULL`, id).
-		Scan(&m.ID, &m.OwnerUserID, &m.Name, &m.Provider, &raw, &m.Reserve, &m.DeletedAt, &m.CreatedAt, &m.UpdatedAt)
+	err := r.db.Pool.QueryRow(ctx, `SELECT id,owner_user_id,name,provider,config,reserve,last_tested_at,last_test_result,deleted_at,created_at,updated_at FROM accesses WHERE id=$1 AND deleted_at IS NULL`, id).
+		Scan(&m.ID, &m.OwnerUserID, &m.Name, &m.Provider, &raw, &m.Reserve, &m.LastTestedAt, &m.LastTestResult, &m.DeletedAt, &m.CreatedAt, &m.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -192,6 +192,11 @@ func (r *Repository) SaveAccessForUser(ctx context.Context, in model.Access, use
 		return nil, err
 	}
 	return saved, nil
+}
+
+func (r *Repository) UpdateAccessTestResult(ctx context.Context, id string, testedAt time.Time, result string) error {
+	_, err := r.db.Pool.Exec(ctx, `UPDATE accesses SET last_tested_at=$2,last_test_result=$3,updated_at=$2 WHERE id=$1`, id, testedAt, result)
+	return err
 }
 
 func (r *Repository) SoftDeleteAccessForUser(ctx context.Context, id, userID, role string) error {

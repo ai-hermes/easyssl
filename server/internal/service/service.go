@@ -242,7 +242,14 @@ func (s *Service) TestAccess(ctx context.Context, auth model.AuthContext, id str
 	if err != nil {
 		return err
 	}
-	return accessprovider.TestAccess(ctx, *access)
+	testErr := accessprovider.TestAccess(ctx, *access)
+	now := time.Now()
+	result := "success"
+	if testErr != nil {
+		result = "error"
+	}
+	_ = s.repo.UpdateAccessTestResult(ctx, id, now, result)
+	return testErr
 }
 
 func (s *Service) ListWorkflows(ctx context.Context, auth model.AuthContext) ([]model.Workflow, error) {

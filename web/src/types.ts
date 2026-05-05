@@ -29,6 +29,8 @@ export type Access = {
   provider: string;
   config: Record<string, unknown>;
   reserve?: string;
+  lastTestedAt?: string;
+  lastTestResult?: string;
 };
 
 export type Workflow = {

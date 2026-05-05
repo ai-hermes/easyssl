@@ -121,13 +121,19 @@
     "createTitle": "新增授权",
     "dialogDescription": "配置完成后可用于证书申请或部署节点。新增 provider 表单由后端元数据自动生成。",
     "namePlaceholder": "授权名称",
+    "selectProvider": "选择 Provider",
     "leaveBlankHint": "（留空表示不修改）",
     "create": "新增授权",
     "columns": {
       "name": "名称",
       "provider": "Provider",
       "config": "配置",
+      "testStatus": "测试状态",
       "actions": "操作"
+    },
+    "testStatus": {
+      "lastTested": "最近测试",
+      "notTested": "未测试"
     }
   },
   "workflows": {
