@@ -54,6 +54,7 @@ export default function SettingsPage() {
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
   const [version, setVersion] = useState("");
+  const [commitUrl, setCommitUrl] = useState("");
   const isAdmin = getRole() === "admin";
 
   async function loadAPIKeys() {
@@ -72,7 +73,10 @@ export default function SettingsPage() {
   useEffect(() => {
     void loadAPIKeys();
     if (isAdmin) {
-      api.version().then((res) => setVersion(res.version)).catch(() => {});
+      api.version().then((res) => {
+        setVersion(res.version);
+        setCommitUrl(res.commitUrl);
+      }).catch(() => {});
     }
   }, []);
 
@@ -108,10 +112,21 @@ export default function SettingsPage() {
           })}
         </nav>
         {isAdmin && version ? (
-          <div className="mt-4 border-t border-[#ebebeb] pt-3">
+          <div className="mt-auto border-t border-[#ebebeb] pt-3">
             <div className="flex items-center gap-1.5 text-xs text-[#666]">
               <GitBranch size={12} />
-              <span className="font-mono">{version}</span>
+              {commitUrl ? (
+                <a
+                  href={commitUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono hover:text-[#171717] hover:underline"
+                >
+                  {version}
+                </a>
+              ) : (
+                <span className="font-mono">{version}</span>
+              )}
             </div>
           </div>
         ) : null}

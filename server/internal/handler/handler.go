@@ -917,5 +917,5 @@ func (h *Handler) Version(c *gin.Context) {
 		util.Err(c, 403, "admin role required")
 		return
 	}
-	util.OK(c, gin.H{"version": version.String()})
+	util.OK(c, gin.H{"version": version.String(), "commitUrl": version.CommitURL()})
 }
