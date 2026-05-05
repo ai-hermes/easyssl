@@ -48,6 +48,7 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 
 	api.GET("/admin/users", h.ListUsers)
 	api.PUT("/admin/users/:id/status", h.UpdateUserStatus)
+	api.GET("/admin/version", h.Version)
 
 	api.GET("/providers", h.ListProviders)
 
@@ -87,6 +88,10 @@ func New(cfg config.Config, database *db.DB) *gin.Engine {
 
 	if _, err := os.Stat("../web/dist/index.html"); err == nil {
 		r.Static("/assets", "../web/dist/assets")
+		r.StaticFile("/favicon.png", "../web/dist/favicon.png")
+		r.StaticFile("/logo.png", "../web/dist/logo.png")
+		r.StaticFile("/logo-v1.png", "../web/dist/logo-v1.png")
+		r.StaticFile("/logo-v2.png", "../web/dist/logo-v2.png")
 		r.NoRoute(func(c *gin.Context) { c.File("../web/dist/index.html") })
 	}
 

@@ -65,6 +65,9 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            GIT_BRANCH=${{ github.ref_name }}
+            GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

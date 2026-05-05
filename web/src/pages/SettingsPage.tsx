@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { CalendarIcon, Copy, KeyRound, User } from "lucide-react";
+import { CalendarIcon, Copy, KeyRound, User, GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import i18n from "@/i18n";
 import { api } from "@/api";
+import { getRole } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,8 @@ export default function SettingsPage() {
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedToken, setRevealedToken] = useState("");
+  const [version, setVersion] = useState("");
+  const isAdmin = getRole() === "admin";
 
   async function loadAPIKeys() {
     setLoadingKeys(true);
@@ -68,6 +71,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     void loadAPIKeys();
+    if (isAdmin) {
+      api.version().then((res) => setVersion(res.version)).catch(() => {});
+    }
   }, []);
 
   const navItems: { key: "profile" | "openapi"; label: string; icon: React.ReactNode }[] = [
@@ -101,6 +107,14 @@ export default function SettingsPage() {
             );
           })}
         </nav>
+        {isAdmin && version ? (
+          <div className="mt-4 border-t border-[#ebebeb] pt-3">
+            <div className="flex items-center gap-1.5 text-xs text-[#666]">
+              <GitBranch size={12} />
+              <span className="font-mono">{version}</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Right Content */}

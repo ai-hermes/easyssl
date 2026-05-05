@@ -25,7 +25,12 @@ COPY server/go.mod server/go.sum ./
 RUN go mod download
 
 COPY server/ ./
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/api ./cmd/api && \
+
+ARG GIT_BRANCH=unknown
+ARG GIT_COMMIT=unknown
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w -X easyssl/server/internal/version.Branch=${GIT_BRANCH} -X easyssl/server/internal/version.Commit=${GIT_COMMIT}" \
+    -o /out/api ./cmd/api && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/migrate ./cmd/migrate
 
 # ------------------------------

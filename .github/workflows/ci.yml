@@ -126,6 +126,9 @@ jobs:
           file: server/Dockerfile
           push: false
           tags: easyssl-api:ci
+          build-args: |
+            GIT_BRANCH=${{ github.ref_name }}
+            GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
