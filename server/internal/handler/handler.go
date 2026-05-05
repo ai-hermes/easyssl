@@ -10,6 +10,7 @@ import (
 	"easyssl/server/internal/repository"
 	"easyssl/server/internal/service"
 	"easyssl/server/internal/util"
+	"easyssl/server/internal/version"
 
 	"github.com/gin-gonic/gin"
 )
@@ -900,4 +901,21 @@ func (h *Handler) UpdateUserStatus(c *gin.Context) {
 		return
 	}
 	util.OK(c, gin.H{})
+}
+
+// Version godoc
+// @Summary Get server version (admin only)
+// @Description Get the current server build version including git branch and commit id.
+// @Tags Admin
+// @Produce json
+// @Security BearerAuth
+// @Security ApiKeyAuth
+// @Success 200 {object} util.Response
+// @Router /api/admin/version [get]
+func (h *Handler) Version(c *gin.Context) {
+	if !h.auth(c).IsAdmin() {
+		util.Err(c, 403, "admin role required")
+		return
+	}
+	util.OK(c, gin.H{"version": version.String()})
 }

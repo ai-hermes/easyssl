@@ -8,8 +8,12 @@ RUN go mod download
 
 COPY server/ ./
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/api ./cmd/api && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/migrate ./cmd/migrate
+ARG GIT_BRANCH=unknown
+ARG GIT_COMMIT=unknown
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w -X easyssl/server/internal/version.Branch=${GIT_BRANCH} -X easyssl/server/internal/version.Commit=${GIT_COMMIT}" \
+    -o /out/api ./cmd/api && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/migrate ./cmd/migrate
 
 FROM ${REGISTRY}/alpine:3.20
 
