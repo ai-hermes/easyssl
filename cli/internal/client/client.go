@@ -85,39 +85,6 @@ func (c *Client) Do(method, path string, body any) ([]byte, error) {
 	return data, nil
 }
 
-// Login authenticates with email and password and returns the JWT token.
-func (c *Client) Login(email, password string) (string, error) {
-	resp, err := c.do("POST", "/api/auth/login", map[string]string{
-		"email":    email,
-		"password": password,
-	}, nil)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("login failed: HTTP %d: %s", resp.StatusCode, string(data))
-	}
-	var result struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-		Data struct {
-			Token string `json:"token"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
-	}
-	if result.Code != 0 && result.Code != 200 {
-		return "", fmt.Errorf("login failed: %s", result.Msg)
-	}
-	return result.Data.Token, nil
-}
-
 // Me returns the current user info.
 func (c *Client) Me() ([]byte, error) {
 	return c.Do("GET", "/api/auth/me", nil)

@@ -59,5 +59,7 @@ var configGetCmd = &cobra.Command{
 func init() {
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configGetCmd)
+	configSetCmd.Long = "Set a config value. Supported keys: server, api_key, token."
+	configGetCmd.Long = fmt.Sprintf("Show current config. Default server: %s", config.DefaultServer)
 	rootCmd.AddCommand(configCmd)
 }
