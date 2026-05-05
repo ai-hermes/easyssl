@@ -12,30 +12,26 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate with the EasySSL server",
-	Long: `Login to an EasySSL server using email and password.
-The JWT token is persisted to the local config for subsequent commands.`,
+	Long: `Login to an EasySSL server using an API key.
+The API key is persisted to the local config for subsequent commands.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		server, _ := cmd.Flags().GetString("server")
-		email, _ := cmd.Flags().GetString("email")
-		password, _ := cmd.Flags().GetString("password")
+		apiKey, _ := cmd.Flags().GetString("api-key")
 
 		if server == "" {
-			return fmt.Errorf("--server is required")
+			server = cfg.Server
 		}
-		if email == "" {
-			return fmt.Errorf("--email is required")
-		}
-		if password == "" {
-			return fmt.Errorf("--password is required")
+		if apiKey == "" {
+			return fmt.Errorf("--api-key is required")
 		}
 
 		cfg.Server = server
+		cfg.APIKey = apiKey
+		cfg.Token = ""
 		c := client.New(cfg)
-		token, err := c.Login(email, password)
-		if err != nil {
-			return err
+		if _, err := c.Me(); err != nil {
+			return fmt.Errorf("login failed: %w", err)
 		}
-		cfg.Token = token
 		if err := config.Save(cfg); err != nil {
 			return fmt.Errorf("save config: %w", err)
 		}
@@ -45,11 +41,8 @@ The JWT token is persisted to the local config for subsequent commands.`,
 }
 
 func init() {
-	loginCmd.Flags().String("server", "", "EasySSL server URL (e.g. http://localhost:8090)")
-	loginCmd.Flags().String("email", "", "user email")
-	loginCmd.Flags().String("password", "", "user password")
-	_ = loginCmd.MarkFlagRequired("server")
-	_ = loginCmd.MarkFlagRequired("email")
-	_ = loginCmd.MarkFlagRequired("password")
+	loginCmd.Flags().String("server", "", "EasySSL server URL (optional, defaults to https://easyssl.spotty.com.cn/)")
+	loginCmd.Flags().String("api-key", "", "EasySSL API key")
+	_ = loginCmd.MarkFlagRequired("api-key")
 	rootCmd.AddCommand(loginCmd)
 }

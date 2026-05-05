@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const DefaultServer = "https://easyssl.spotty.com.cn/"
+
 // Config holds CLI configuration and credentials.
 type Config struct {
 	Server   string `mapstructure:"server"`
@@ -31,7 +33,7 @@ func File() string {
 
 // Load reads the config file into a Config value.
 func Load() (Config, error) {
-	var cfg Config
+	cfg := Config{Server: DefaultServer}
 	v := viper.New()
 	v.SetConfigFile(File())
 	v.SetConfigType("yaml")
@@ -43,6 +45,9 @@ func Load() (Config, error) {
 	}
 	if err := v.Unmarshal(&cfg); err != nil {
 		return cfg, fmt.Errorf("unmarshal config: %w", err)
+	}
+	if cfg.Server == "" {
+		cfg.Server = DefaultServer
 	}
 	return cfg, nil
 }

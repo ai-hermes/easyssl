@@ -54,3 +54,16 @@ func TestClear(t *testing.T) {
 		t.Error("config file should not exist after clear")
 	}
 }
+
+func TestLoadUsesDefaultServerWhenConfigMissing(t *testing.T) {
+	tmpDir := t.TempDir()
+	_ = os.Setenv("HOME", tmpDir)
+
+	loaded, err := Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if loaded.Server != DefaultServer {
+		t.Fatalf("server = %q, want %q", loaded.Server, DefaultServer)
+	}
+}

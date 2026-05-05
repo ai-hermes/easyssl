@@ -13,7 +13,16 @@ go build -o easyssl ./cmd/easyssl
 ### Login
 
 ```bash
-easyssl login --server http://localhost:8090 --email admin@easyssl.local --password "your-password"
+easyssl login --api-key <your-api-key>
+```
+
+Default backend: `https://easyssl.spotty.com.cn/`
+
+Use a custom backend for debugging:
+
+```bash
+easyssl login --server http://localhost:8090 --api-key <your-api-key>
+easyssl config set server http://localhost:8090
 ```
 
 ### Config
@@ -22,7 +31,7 @@ easyssl login --server http://localhost:8090 --email admin@easyssl.local --passw
 # View current config
 easyssl config get
 
-# Set API key for OpenAPI endpoints
+# Set API key manually
 easyssl config set api_key <your-api-key>
 ```
 
