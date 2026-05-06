@@ -47,7 +47,7 @@ jobs:
               - ".github/workflows/**"
             cli:
               - "cli/**"
-              - ".agents/skills/easyssl-cli/**"
+              - ".agents/skills/easyssl/**"
               - ".github/workflows/**"
               - "go.work"
               - "go.work.sum"
