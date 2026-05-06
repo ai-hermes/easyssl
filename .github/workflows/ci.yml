@@ -47,6 +47,7 @@ jobs:
               - ".github/workflows/**"
             cli:
               - "cli/**"
+              - ".agents/skills/easyssl/**"
               - ".github/workflows/**"
               - "go.work"
               - "go.work.sum"
@@ -173,6 +174,9 @@ jobs:
 
       - name: Build CLI binary
         run: go build -o /tmp/easyssl-cli ./cmd/easyssl
+
+      - name: Smoke test version command
+        run: /tmp/easyssl-cli version --format json
 
   web:
     name: Web CI

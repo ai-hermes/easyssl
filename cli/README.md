@@ -9,6 +9,32 @@ cd cli
 go build -o easyssl ./cmd/easyssl
 ```
 
+## Download prebuilt binary
+
+```bash
+VERSION="${VERSION:-latest}" # e.g. v0.1.1
+BASE_URL="https://gh-proxy.org/https://github.com/ai-hermes/easyssl/releases"
+
+# macOS (amd64)
+curl -fL "${BASE_URL}/download/${VERSION}/easyssl-darwin-amd64" -o easyssl
+chmod +x easyssl
+
+# macOS (arm64)
+curl -fL "${BASE_URL}/download/${VERSION}/easyssl-darwin-arm64" -o easyssl
+chmod +x easyssl
+
+# Linux (amd64)
+curl -fL "${BASE_URL}/download/${VERSION}/easyssl-linux-amd64" -o easyssl
+chmod +x easyssl
+
+# Linux (arm64)
+curl -fL "${BASE_URL}/download/${VERSION}/easyssl-linux-arm64" -o easyssl
+chmod +x easyssl
+
+# Windows (PowerShell)
+Invoke-WebRequest "https://gh-proxy.org/https://github.com/ai-hermes/easyssl/releases/download/latest/easyssl-windows-amd64.exe" -OutFile easyssl.exe
+```
+
 ## Core usage
 
 ```bash

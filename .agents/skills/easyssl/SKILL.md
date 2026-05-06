@@ -1,5 +1,5 @@
 ---
-name: easyssl-cli
+name: easyssl
 description: Use EasySSL CLI in agent workflows for certificate apply, run polling, access discovery, and certificate download with strict JSON outputs.
 license: MIT
 metadata:
