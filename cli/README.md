@@ -2,64 +2,53 @@
 
 A command-line interface for managing EasySSL certificates and workflows.
 
-## Installation
+## Build
 
 ```bash
+cd cli
 go build -o easyssl ./cmd/easyssl
 ```
 
-## Usage
-
-### Login
+## Core usage
 
 ```bash
-easyssl login --api-key <your-api-key>
-```
+# login (api-key)
+easyssl login --api-key <key>
 
-Default backend: `https://easyssl.spotty.com.cn/`
+# include diagnostics
+easyssl --verbose whoami
 
-Use a custom backend for debugging:
+# version metadata
+easyssl version
 
-```bash
-easyssl login --server http://localhost:8090 --api-key <your-api-key>
-easyssl config set server http://localhost:8090
-```
-
-### Config
-
-```bash
-# View current config
-easyssl config get
-
-# Set API key manually
-easyssl config set api_key <your-api-key>
-```
-
-### Workflows
-
-```bash
-# List workflows
+# list resources
+easyssl access list --openapi
+easyssl certificate list --openapi
 easyssl workflow list
+
+# apply cert via openapi
+easyssl certificate apply --provider tencent --access-id <id> --domain example.com
+
+# run/event polling
+easyssl certificate status <run-id>
+easyssl certificate events <run-id> --limit 100
 ```
 
-### Certificates
+## Output and diagnostics
+
+- Default output format: `json`.
+- Supported formats: `--format json|text`.
+- Verbose diagnostics: `--verbose`.
+- Include response body snippets: `--trace`.
+- When server returns HTML/fallback pages, CLI emits a structured error to stderr with status/content-type/request URL hints.
+
+## Config keys
 
 ```bash
-# List certificates
-easyssl certificate list
-
-# Apply for a certificate via OpenAPI
-easyssl certificate apply --workflow <workflow-id> --api-key <key>
-
-# Check certificate run status
-easyssl certificate status <run-id> --api-key <key>
-
-# Download a certificate
-easyssl certificate download <certificate-id> --api-key <key> --output cert.zip
-```
-
-### Logout
-
-```bash
-easyssl logout
+easyssl config get
+easyssl config set server https://easyssl.spotty.com.cn
+easyssl config set api_key <key>
+easyssl config set output json
+easyssl config set timeout 30
+easyssl config set trace false
 ```
