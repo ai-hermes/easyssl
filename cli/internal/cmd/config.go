@@ -26,14 +26,26 @@ var configSetCmd = &cobra.Command{
 			cfg.APIKey = value
 		case "token":
 			cfg.Token = value
+		case "output":
+			if !isOutputFormatSupported(value) {
+				return exitErr(2, fmt.Errorf("unsupported output: %s", value))
+			}
+			cfg.Output = value
+		case "timeout":
+			var parsed int
+			if _, err := fmt.Sscanf(value, "%d", &parsed); err != nil || parsed <= 0 {
+				return exitErr(2, fmt.Errorf("timeout must be positive integer seconds"))
+			}
+			cfg.Timeout = parsed
+		case "trace":
+			cfg.Trace = value == "true" || value == "1"
 		default:
-			return fmt.Errorf("unknown config key: %s", key)
+			return exitErr(2, fmt.Errorf("unknown config key: %s", key))
 		}
 		if err := config.Save(cfg); err != nil {
-			return fmt.Errorf("save config: %w", err)
+			return exitErr(5, fmt.Errorf("save config: %w", err))
 		}
-		fmt.Printf("Set %s = %s\n", key, value)
-		return nil
+		return printOutput(map[string]any{"ok": true, "key": key, "value": value})
 	},
 }
 
@@ -41,25 +53,28 @@ var configGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Show current config",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("server: %s\n", cfg.Server)
-		if cfg.Token != "" {
-			fmt.Println("token: ***")
-		} else {
-			fmt.Println("token: (none)")
-		}
-		if cfg.APIKey != "" {
-			fmt.Println("api_key: ***")
-		} else {
-			fmt.Println("api_key: (none)")
-		}
-		return nil
+		return printOutput(map[string]any{
+			"server":  cfg.Server,
+			"token":   mask(cfg.Token),
+			"api_key": mask(cfg.APIKey),
+			"output":  cfg.Output,
+			"timeout": cfg.Timeout,
+			"trace":   cfg.Trace,
+		})
 	},
+}
+
+func mask(s string) string {
+	if s == "" {
+		return ""
+	}
+	return "***"
 }
 
 func init() {
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configGetCmd)
-	configSetCmd.Long = "Set a config value. Supported keys: server, api_key, token."
+	configSetCmd.Long = "Set a config value. Supported keys: server, api_key, token, output, timeout, trace."
 	configGetCmd.Long = fmt.Sprintf("Show current config. Default server: %s", config.DefaultServer)
 	rootCmd.AddCommand(configCmd)
 }

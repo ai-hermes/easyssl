@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"easyssl/cli/internal/client"
 
@@ -21,138 +18,122 @@ var certListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List certificates",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Server == "" {
-			return fmt.Errorf("not logged in; run 'easyssl login' first")
+		openapi, _ := cmd.Flags().GetBool("openapi")
+		if openapi {
+			return runRequest("GET", "/openapi/certificates", nil, nil, client.AuthAPIKey)
 		}
-		c := client.New(cfg)
-		data, err := c.ListCertificates()
-		if err != nil {
-			return err
-		}
-		var pretty bytes.Buffer
-		if err := json.Indent(&pretty, data, "", "  "); err != nil {
-			fmt.Println(string(data))
-			return nil
-		}
-		fmt.Println(pretty.String())
-		return nil
+		return runRequest("GET", "/api/certificates", nil, nil, client.AuthAuto)
 	},
 }
 
 var certApplyCmd = &cobra.Command{
 	Use:   "apply",
-	Short: "Apply for a new certificate via OpenAPI",
+	Short: "Apply for a certificate via OpenAPI",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Server == "" {
-			return fmt.Errorf("not configured; run 'easyssl login' or set --api-key")
+		file, _ := cmd.Flags().GetString("file")
+		data, _ := cmd.Flags().GetString("data")
+		body := map[string]any{}
+		if file != "" || data != "" {
+			parsed, err := readJSONInput(file, data)
+			if err != nil {
+				return exitErr(2, err)
+			}
+			body = parsed
 		}
-		apiKey, _ := cmd.Flags().GetString("api-key")
-		if apiKey == "" {
-			apiKey = cfg.APIKey
+		provider, _ := cmd.Flags().GetString("provider")
+		accessID, _ := cmd.Flags().GetString("access-id")
+		domains, _ := cmd.Flags().GetStringSlice("domain")
+		contactEmail, _ := cmd.Flags().GetString("contact-email")
+		if provider != "" {
+			body["provider"] = provider
 		}
-		if apiKey == "" {
-			return fmt.Errorf("--api-key is required for OpenAPI endpoints")
+		if accessID != "" {
+			body["accessId"] = accessID
 		}
-
-		workflowID, _ := cmd.Flags().GetString("workflow")
-		if workflowID == "" {
-			return fmt.Errorf("--workflow is required")
+		if len(domains) > 0 {
+			body["domains"] = domains
 		}
-
-		c := client.New(cfg)
-		c.SetAPIKey(apiKey)
-		data, err := c.ApplyCertificate(map[string]any{
-			"workflowId": workflowID,
-		})
-		if err != nil {
-			return err
+		if contactEmail != "" {
+			body["contactEmail"] = contactEmail
 		}
-		var pretty bytes.Buffer
-		if err := json.Indent(&pretty, data, "", "  "); err != nil {
-			fmt.Println(string(data))
-			return nil
+		if len(body) == 0 {
+			return exitErr(2, fmt.Errorf("provide request body via --file/--data or flags"))
 		}
-		fmt.Println(pretty.String())
-		return nil
+		return runRequest("POST", "/openapi/certificates/apply", nil, body, client.AuthAPIKey)
 	},
 }
 
 var certDownloadCmd = &cobra.Command{
 	Use:   "download <certificate-id>",
-	Short: "Download a certificate archive",
+	Short: "Get certificate download info",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Server == "" {
-			return fmt.Errorf("not configured; run 'easyssl login' or set --api-key")
+		format, _ := cmd.Flags().GetString("cert-format")
+		openapi, _ := cmd.Flags().GetBool("openapi")
+		path := "/api/certificates/" + args[0] + "/download"
+		auth := client.AuthAuto
+		if openapi {
+			path = "/openapi/certificates/" + args[0] + "/download"
+			auth = client.AuthAPIKey
 		}
-		apiKey, _ := cmd.Flags().GetString("api-key")
-		if apiKey == "" {
-			apiKey = cfg.APIKey
-		}
-		if apiKey == "" {
-			return fmt.Errorf("--api-key is required for OpenAPI endpoints")
-		}
+		body := map[string]any{"format": format}
+		return runRequest("POST", path, nil, body, auth)
+	},
+}
 
-		out, _ := cmd.Flags().GetString("output")
-		c := client.New(cfg)
-		c.SetAPIKey(apiKey)
-		data, err := c.DownloadCertificate(args[0])
-		if err != nil {
-			return err
-		}
-		if out == "" {
-			out = args[0] + ".zip"
-		}
-		if err := os.WriteFile(out, data, 0o644); err != nil {
-			return fmt.Errorf("write file: %w", err)
-		}
-		fmt.Printf("Downloaded to %s\n", out)
-		return nil
+var certRevokeCmd = &cobra.Command{
+	Use:   "revoke <certificate-id>",
+	Short: "Revoke a certificate",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runRequest("POST", "/api/certificates/"+args[0]+"/revoke", nil, nil, client.AuthAuto)
 	},
 }
 
 var certStatusCmd = &cobra.Command{
 	Use:   "status <run-id>",
-	Short: "Get certificate run status",
+	Short: "Get openapi certificate apply run status",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Server == "" {
-			return fmt.Errorf("not configured; run 'easyssl login' or set --api-key")
-		}
-		apiKey, _ := cmd.Flags().GetString("api-key")
-		if apiKey == "" {
-			apiKey = cfg.APIKey
-		}
-		if apiKey == "" {
-			return fmt.Errorf("--api-key is required for OpenAPI endpoints")
-		}
+		return runRequest("GET", "/openapi/certificates/runs/"+args[0], nil, nil, client.AuthAPIKey)
+	},
+}
 
-		c := client.New(cfg)
-		c.SetAPIKey(apiKey)
-		data, err := c.GetCertificateRun(args[0])
-		if err != nil {
-			return err
+var certRunEventsCmd = &cobra.Command{
+	Use:   "events <run-id>",
+	Short: "List openapi certificate run events",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		nodeID, _ := cmd.Flags().GetString("node-id")
+		since, _ := cmd.Flags().GetString("since")
+		limit, _ := cmd.Flags().GetInt("limit")
+		query := map[string]string{"nodeId": nodeID, "since": since}
+		if limit > 0 {
+			query["limit"] = fmt.Sprintf("%d", limit)
 		}
-		var pretty bytes.Buffer
-		if err := json.Indent(&pretty, data, "", "  "); err != nil {
-			fmt.Println(string(data))
-			return nil
-		}
-		fmt.Println(pretty.String())
-		return nil
+		return runRequest("GET", "/openapi/certificates/runs/"+args[0]+"/events", query, nil, client.AuthAPIKey)
 	},
 }
 
 func init() {
-	certApplyCmd.Flags().String("workflow", "", "workflow ID to use for certificate application")
-	certApplyCmd.Flags().String("api-key", "", "OpenAPI key (or set in config)")
-	certDownloadCmd.Flags().String("output", "", "output file path")
-	certDownloadCmd.Flags().String("api-key", "", "OpenAPI key (or set in config)")
-	certStatusCmd.Flags().String("api-key", "", "OpenAPI key (or set in config)")
+	certListCmd.Flags().Bool("openapi", false, "use OpenAPI endpoint /openapi/certificates")
+	certApplyCmd.Flags().String("file", "", "JSON file path")
+	certApplyCmd.Flags().String("data", "", "inline JSON body")
+	certApplyCmd.Flags().String("provider", "", "certificate provider")
+	certApplyCmd.Flags().String("access-id", "", "access credential id")
+	certApplyCmd.Flags().StringSlice("domain", nil, "domain list, can be repeated")
+	certApplyCmd.Flags().String("contact-email", "", "contact email")
+	certDownloadCmd.Flags().String("cert-format", "PEM", "download format: PEM|PFX|JKS")
+	certDownloadCmd.Flags().Bool("openapi", false, "use OpenAPI endpoint")
+	certRunEventsCmd.Flags().String("node-id", "", "filter by node id")
+	certRunEventsCmd.Flags().String("since", "", "RFC3339 timestamp")
+	certRunEventsCmd.Flags().Int("limit", 0, "max events")
 
 	certificateCmd.AddCommand(certListCmd)
 	certificateCmd.AddCommand(certApplyCmd)
 	certificateCmd.AddCommand(certDownloadCmd)
+	certificateCmd.AddCommand(certRevokeCmd)
 	certificateCmd.AddCommand(certStatusCmd)
+	certificateCmd.AddCommand(certRunEventsCmd)
 	rootCmd.AddCommand(certificateCmd)
 }

@@ -8,13 +8,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-const DefaultServer = "https://easyssl.spotty.com.cn/"
+const DefaultServer = "https://easyssl.spotty.com.cn"
 
 // Config holds CLI configuration and credentials.
 type Config struct {
-	Server   string `mapstructure:"server"`
-	Token    string `mapstructure:"token"`
-	APIKey   string `mapstructure:"api_key"`
+	Server  string `mapstructure:"server"`
+	Token   string `mapstructure:"token"`
+	APIKey  string `mapstructure:"api_key"`
+	Output  string `mapstructure:"output"`
+	Timeout int    `mapstructure:"timeout"`
+	Trace   bool   `mapstructure:"trace"`
 }
 
 // Dir returns the CLI config directory.
@@ -33,7 +36,11 @@ func File() string {
 
 // Load reads the config file into a Config value.
 func Load() (Config, error) {
-	cfg := Config{Server: DefaultServer}
+	cfg := Config{
+		Server:  DefaultServer,
+		Output:  "json",
+		Timeout: 30,
+	}
 	v := viper.New()
 	v.SetConfigFile(File())
 	v.SetConfigType("yaml")
@@ -48,6 +55,12 @@ func Load() (Config, error) {
 	}
 	if cfg.Server == "" {
 		cfg.Server = DefaultServer
+	}
+	if cfg.Output == "" {
+		cfg.Output = "json"
+	}
+	if cfg.Timeout <= 0 {
+		cfg.Timeout = 30
 	}
 	return cfg, nil
 }
@@ -65,6 +78,12 @@ func Save(cfg Config) error {
 	v.Set("server", cfg.Server)
 	v.Set("token", cfg.Token)
 	v.Set("api_key", cfg.APIKey)
+	v.Set("output", cfg.Output)
+	v.Set("timeout", cfg.Timeout)
+	v.Set("trace", cfg.Trace)
+	if _, err := os.Stat(File()); os.IsNotExist(err) {
+		return v.WriteConfigAs(File())
+	}
 	return v.WriteConfig()
 }
 
