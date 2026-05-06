@@ -25,12 +25,22 @@ jobs:
           go-version-file: cli/go.mod
           cache-dependency-path: cli/go.sum
 
+      - name: Determine GoReleaser args
+        id: goreleaser-args
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "args=release --clean --snapshot --skip=publish --config .goreleaser.yml" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=release --clean --config .goreleaser.yml" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --config cli/.goreleaser.yml
+          workdir: cli
+          args: ${{ steps.goreleaser-args.outputs.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
