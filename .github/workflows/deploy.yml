@@ -24,74 +24,6 @@ permissions:
   contents: write
 
 jobs:
-  build-cli:
-    name: Build CLI Release Assets
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-            suffix: linux-amd64
-          - goos: linux
-            goarch: arm64
-            suffix: linux-arm64
-          - goos: darwin
-            goarch: amd64
-            suffix: darwin-amd64
-          - goos: darwin
-            goarch: arm64
-            suffix: darwin-arm64
-          - goos: windows
-            goarch: amd64
-            suffix: windows-amd64.exe
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: cli/go.mod
-          cache-dependency-path: cli/go.sum
-
-      - name: Build CLI binary
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          cd cli
-          output="easyssl-${{ matrix.suffix }}"
-          go build -ldflags="-s -w" -o "$output" ./cmd/easyssl
-          echo "output=$output" >> "$GITHUB_ENV"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: easyssl-${{ matrix.suffix }}
-          path: cli/${{ env.output }}
-
-  release:
-    name: Create GitHub Release
-    needs: build-cli
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          pattern: easyssl-*
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**/*
-          generate_release_notes: true
-
   build:
     name: Build & Push Image
     runs-on: ubuntu-latest
@@ -172,16 +104,13 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            # Ensure .env exists (user must create it manually on first setup)
             if [ ! -f .env ]; then
-              echo "⚠️  .env file not found at $APP_DIR/.env"
-              echo "Please create it before deploying. See DEPLOY.md for details."
+              echo ".env file not found at $APP_DIR/.env"
               exit 1
             fi
 
-            # Write docker-compose.yml if not exists (idempotent)
             if [ ! -f docker-compose.yml ]; then
-              cat > docker-compose.yml << 'EOF'
+              cat > docker-compose.yml << 'YAML'
             services:
               api:
                 image: ${EASYSSL_IMAGE}
@@ -226,74 +155,46 @@ jobs:
             volumes:
               pgdata:
                 name: easyssl-pgdata
-            EOF
+            YAML
             fi
 
-            # Set target image and update docker-compose.yml in-place
             EASYSSL_IMAGE="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.tag }}"
-            echo "Target image: $EASYSSL_IMAGE"
-
-            # Remove obsolete version attribute if present (backward compat for old compose files)
             sed -i '/^version:/d' docker-compose.yml
-
-            # Replace the first image: line (api service) with the actual image address
             LINE=$(grep -n "image:" docker-compose.yml | head -1 | cut -d: -f1)
             sed -i "${LINE}s|image: .*|image: $EASYSSL_IMAGE|" docker-compose.yml
 
-            echo "--- docker-compose.yml image config ---"
-            grep -n "image:" docker-compose.yml || true
-            echo "---------------------------------------"
-
-            # Ensure Docker logout on exit so credentials are not left on disk
             trap 'docker logout >/dev/null 2>&1 || true' EXIT
 
-            # Detect docker compose command (v2 plugin vs v1 binary)
             if docker compose version >/dev/null 2>&1; then
               COMPOSE="docker compose"
             elif docker-compose version >/dev/null 2>&1; then
               COMPOSE="docker-compose"
             else
-              echo "❌ Docker Compose not found"
+              echo "Docker Compose not found"
               exit 1
             fi
 
-            # Login to Tencent Cloud CCR
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login ${{ env.REGISTRY }} -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-            # Pull new image with retry (handles transient network issues)
-            echo "Pulling image: $EASYSSL_IMAGE"
             for attempt in 1 2 3; do
               if $COMPOSE pull api; then
-                echo "✅ Image pulled successfully"
                 break
               fi
-              echo "⚠️ Pull attempt $attempt/3 failed"
               if [ "$attempt" -eq 3 ]; then
-                echo "❌ Image pull failed after 3 attempts"
-                echo "Hint: Check CCR credentials and ensure the instance 'ccr.ccs.tencentyun.com' is accessible from your server."
+                echo "Image pull failed after 3 attempts"
                 exit 1
               fi
-              echo "Retrying in 15s..."
               sleep 15
             done
 
-            # Restart services
             $COMPOSE up -d
 
-            # Cleanup old dangling images and build cache
-            docker image prune -af --filter "until=168h" || true
-            docker builder prune -f || true
-
-            # Health check against the local API
-            echo "Waiting for API health check..."
             for i in $(seq 1 30); do
               if curl -sf http://localhost:8090/healthz > /dev/null 2>&1; then
-                echo "✅ API is healthy!"
                 exit 0
               fi
-              echo "Attempt $i/30..."
               sleep 2
             done
 
-            echo "❌ API health check failed"
+            echo "API health check failed"
             exit 1

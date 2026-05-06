@@ -13,7 +13,7 @@ var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate with the EasySSL server",
 	Long: `Login to an EasySSL server using an API key.
-The API key is persisted to the local config for subsequent commands.`,
+The API key is persisted to local config for subsequent commands.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		server, _ := cmd.Flags().GetString("server")
 		apiKey, _ := cmd.Flags().GetString("api-key")
@@ -22,27 +22,31 @@ The API key is persisted to the local config for subsequent commands.`,
 			server = cfg.Server
 		}
 		if apiKey == "" {
-			return fmt.Errorf("--api-key is required")
+			return exitErr(2, fmt.Errorf("--api-key is required"))
 		}
 
-		cfg.Server = server
-		cfg.APIKey = apiKey
-		cfg.Token = ""
-		c := client.New(cfg)
-		if _, err := c.Me(); err != nil {
-			return fmt.Errorf("login failed: %w", err)
+		next := cfg
+		next.Server = server
+		next.APIKey = apiKey
+		next.Token = ""
+
+		c, err := client.New(next, client.Options{})
+		if err != nil {
+			return exitErr(2, err)
 		}
-		if err := config.Save(cfg); err != nil {
-			return fmt.Errorf("save config: %w", err)
+		if _, err := c.Do("GET", "/api/auth/me", nil, nil, client.AuthAuto); err != nil {
+			return parseAPIError(fmt.Errorf("login failed: %w", err))
 		}
-		fmt.Println("Login successful.")
-		return nil
+		if err := config.Save(next); err != nil {
+			return exitErr(5, fmt.Errorf("save config: %w", err))
+		}
+		cfg = next
+		return printOutput(map[string]any{"ok": true, "msg": "login successful"})
 	},
 }
 
 func init() {
-	loginCmd.Flags().String("server", "", "EasySSL server URL (optional, defaults to https://easyssl.spotty.com.cn/)")
+	loginCmd.Flags().String("server", "", "EasySSL server URL")
 	loginCmd.Flags().String("api-key", "", "EasySSL API key")
-	_ = loginCmd.MarkFlagRequired("api-key")
 	rootCmd.AddCommand(loginCmd)
 }

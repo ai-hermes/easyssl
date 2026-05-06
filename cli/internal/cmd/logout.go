@@ -13,10 +13,9 @@ var logoutCmd = &cobra.Command{
 	Short: "Remove stored credentials",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := config.Clear(); err != nil {
-			return fmt.Errorf("clear config: %w", err)
+			return exitErr(5, fmt.Errorf("clear config: %w", err))
 		}
-		fmt.Println("Logged out.")
-		return nil
+		return printOutput(map[string]any{"ok": true, "msg": "logged out"})
 	},
 }
 

@@ -1,0 +1,41 @@
+version: 2
+project_name: easyssl
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: easyssl
+    main: ./cmd/easyssl
+    binary: easyssl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X easyssl/cli/internal/buildinfo.Version={{.Version}}
+      - -X easyssl/cli/internal/buildinfo.Commit={{.Commit}}
+      - -X easyssl/cli/internal/buildinfo.BuildDate={{.Date}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    name: "{{ .Env.GITHUB_REPOSITORY_NAME }}"
