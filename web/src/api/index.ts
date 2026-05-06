@@ -2,7 +2,12 @@ import { request } from "./client";
 import type { APIKeyItem, Access, Certificate, ProviderDefinition, User, Workflow, WorkflowRun, WorkflowRunEvent, WorkflowRunNode } from "@/types";
 
 export const api = {
-  login: (email: string, password: string) => request<{ token: string; user: { id: string; email: string; role: string; status: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  login: (email: string, password: string) =>
+    request<{ token: string; user: { id: string; email: string; role: string; status: string } }>(
+      "/auth/login",
+      { method: "POST", body: JSON.stringify({ email, password }) },
+      { attachToken: false, handleUnauthorizedAsSessionExpired: false },
+    ),
   register: (email: string, password: string) => request<{ id: string; email: string; role: string; status: string }>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => request<{ id: string; email: string; role: string; status: string }>("/auth/me"),
   changePassword: (password: string) => request<{}>("/auth/password", { method: "PUT", body: JSON.stringify({ password }) }),
