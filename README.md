@@ -76,11 +76,14 @@ curl -X POST "http://127.0.0.1:8090/api/open/certificates/apply" \
 
 Swagger UI: `http://127.0.0.1:8090/swagger/index.html`
 
-## 安装 EasySSL Skill（给 Codex/Agents 使用）
+## Install EasySSL Skill / 安装 EasySSL Skill
+
+Expand one language section below to switch:
+
+<details open>
+<summary><strong>中文说明</strong></summary>
 
 仓库内置 skill 目录：`.agents/skills/easyssl`。
-
-### 中文说明
 
 1) 安装到本地 skills 目录：
 
@@ -98,7 +101,10 @@ ls ~/.codex/skills/easyssl/SKILL.md
 
 在 Codex 对话中可直接提到 `easyssl` skill 触发使用。
 
-### English
+</details>
+
+<details>
+<summary><strong>English</strong></summary>
 
 Built-in skill source path: `.agents/skills/easyssl`.
 
@@ -117,6 +123,8 @@ ls ~/.codex/skills/easyssl/SKILL.md
 ```
 
 Mention `easyssl` in Codex chat to trigger this skill.
+
+</details>
 
 ## Provider 配置案例
 
