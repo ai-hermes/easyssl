@@ -19,31 +19,87 @@ metadata:
 - For diagnostics add `--verbose` (and optionally `--trace`).
 - Parse JSON only from stdout; errors appear on stderr.
 - Authenticate with API key only (`X-API-Key`); do not rely on username/password login flows.
+- Before running any business subcommand, verify login state first (`whoami` preflight).
+
+## Initialization (binary + executable path)
+Run once per session before any EasySSL subcommand:
+
+```bash
+set -euo pipefail
+
+INSTALL_DIR="${HOME}/.local/bin"
+mkdir -p "${INSTALL_DIR}"
+
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+ARCH="$(uname -m)"
+case "${ARCH}" in
+  x86_64|amd64) ARCH="amd64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
+  *) echo "unsupported arch: ${ARCH}" >&2; exit 1 ;;
+esac
+
+VERSION="${EASYSSL_VERSION:-latest}" # e.g. v0.1.1
+BASE_URL="${EASYSSL_BASE_URL:-https://gh-proxy.org/https://github.com/ai-hermes/easyssl/releases}"
+BIN_NAME="easyssl-${OS}-${ARCH}"
+TARGET_BIN="${INSTALL_DIR}/easyssl"
+
+if [ ! -x "${TARGET_BIN}" ]; then
+  curl -fL "${BASE_URL}/download/${VERSION}/${BIN_NAME}" -o "${TARGET_BIN}"
+  chmod +x "${TARGET_BIN}"
+fi
+
+# Option A: append PATH in current shell
+export PATH="${INSTALL_DIR}:$PATH"
+# Option B: use full path directly
+EASYSSL_BIN="${EASYSSL_BIN:-${TARGET_BIN}}"
+```
+
+## Login preflight (must run before every subcommand)
+Before `access/certificate/workflow/...` commands, check login state:
+
+```bash
+set -euo pipefail
+
+EASYSSL_BIN="${EASYSSL_BIN:-easyssl}"
+SERVER="${EASYSSL_SERVER:-https://easyssl.spotty.com.cn}"
+
+if ! "${EASYSSL_BIN}" whoami --server "${SERVER}" --format json >/dev/null 2>&1; then
+  : "${EASYSSL_API_KEY:?EASYSSL_API_KEY is required when not logged in}"
+  "${EASYSSL_BIN}" login --server "${SERVER}" --api-key "${EASYSSL_API_KEY}" --format json >/dev/null
+  "${EASYSSL_BIN}" whoami --server "${SERVER}" --format json >/dev/null
+fi
+```
 
 ## Typical workflow
-1. Authenticate:
+1. Initialize binary and command path (run once):
 ```bash
-easyssl login --server https://easyssl.spotty.com.cn --api-key "$EASYSSL_API_KEY" --format json
+# Run the initialization block above first, then:
+EASYSSL_BIN="${EASYSSL_BIN:-easyssl}"
 ```
-2. List access credentials:
+2. Login preflight (run before every business subcommand):
 ```bash
-easyssl access list --openapi --format json
+# Run the login preflight block above first, then:
+"${EASYSSL_BIN}" whoami --server "${SERVER}" --format json
 ```
-3. Apply certificate:
+3. List access credentials:
 ```bash
-easyssl certificate apply --provider tencent --access-id <access-id> --domain example.com --domain www.example.com --format json
+"${EASYSSL_BIN}" access list --openapi --server "${SERVER}" --format json
 ```
-4. Poll run status:
+4. Apply certificate:
 ```bash
-easyssl certificate status <run-id> --format json
+"${EASYSSL_BIN}" certificate apply --provider tencent --access-id <access-id> --domain example.com --domain www.example.com --server "${SERVER}" --format json
 ```
-5. Inspect run events when needed:
+5. Poll run status:
 ```bash
-easyssl certificate events <run-id> --limit 100 --format json
+"${EASYSSL_BIN}" certificate status <run-id> --server "${SERVER}" --format json
 ```
-6. Download certificate metadata/package:
+6. Inspect run events when needed:
 ```bash
-easyssl certificate download <certificate-id> --openapi --cert-format PEM --format json
+"${EASYSSL_BIN}" certificate events <run-id> --limit 100 --server "${SERVER}" --format json
+```
+7. Download certificate metadata/package:
+```bash
+"${EASYSSL_BIN}" certificate download <certificate-id> --openapi --cert-format PEM --server "${SERVER}" --format json
 ```
 
 ## Troubleshooting
