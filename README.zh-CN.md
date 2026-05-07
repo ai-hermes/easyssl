@@ -83,7 +83,15 @@ Swagger 地址：`http://127.0.0.1:8090/swagger/index.html`
 
 仓库内置 skill 目录：`.agents/skills/easyssl`。
 
-1) 安装到本地 skills 目录：
+选择以下任一安装方式：
+
+**方式一 - 从 GitHub 仓库安装（推荐）：**
+
+```bash
+npx skills add ai-hermes/easyssl -y -g
+```
+
+**方式二 - 从本地源码安装：**
 
 ```bash
 mkdir -p ~/.codex/skills
@@ -91,7 +99,7 @@ rm -rf ~/.codex/skills/easyssl
 cp -R .agents/skills/easyssl ~/.codex/skills/easyssl
 ```
 
-2) 验证安装：
+安装后校验：
 
 ```bash
 ls ~/.codex/skills/easyssl/SKILL.md

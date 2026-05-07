@@ -83,7 +83,15 @@ Swagger UI: `http://127.0.0.1:8090/swagger/index.html`
 
 Built-in skill source path: `.agents/skills/easyssl`.
 
-1) Install to local skills directory:
+Choose one of the following methods:
+
+**Option 1 - Install from GitHub repo (recommended):**
+
+```bash
+npx skills add ai-hermes/easyssl -y -g
+```
+
+**Option 2 - Install from local source:**
 
 ```bash
 mkdir -p ~/.codex/skills
@@ -91,7 +99,7 @@ rm -rf ~/.codex/skills/easyssl
 cp -R .agents/skills/easyssl ~/.codex/skills/easyssl
 ```
 
-2) Verify installation:
+Verify installation:
 
 ```bash
 ls ~/.codex/skills/easyssl/SKILL.md
