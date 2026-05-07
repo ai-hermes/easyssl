@@ -76,6 +76,48 @@ curl -X POST "http://127.0.0.1:8090/api/open/certificates/apply" \
 
 Swagger UI: `http://127.0.0.1:8090/swagger/index.html`
 
+## 安装 EasySSL Skill（给 Codex/Agents 使用）
+
+仓库内置 skill 目录：`.agents/skills/easyssl`。
+
+### 中文说明
+
+1) 安装到本地 skills 目录：
+
+```bash
+mkdir -p ~/.codex/skills
+rm -rf ~/.codex/skills/easyssl
+cp -R .agents/skills/easyssl ~/.codex/skills/easyssl
+```
+
+2) 验证安装：
+
+```bash
+ls ~/.codex/skills/easyssl/SKILL.md
+```
+
+在 Codex 对话中可直接提到 `easyssl` skill 触发使用。
+
+### English
+
+Built-in skill source path: `.agents/skills/easyssl`.
+
+1) Install to local skills directory:
+
+```bash
+mkdir -p ~/.codex/skills
+rm -rf ~/.codex/skills/easyssl
+cp -R .agents/skills/easyssl ~/.codex/skills/easyssl
+```
+
+2) Verify installation:
+
+```bash
+ls ~/.codex/skills/easyssl/SKILL.md
+```
+
+Mention `easyssl` in Codex chat to trigger this skill.
+
 ## Provider 配置案例
 
 先在「Access 授权管理」创建授权，工作流节点里的 `accessId` 引用对应授权记录 `id`。
